@@ -1,5 +1,5 @@
 import { ChessPieceName, ChessColour } from "../utilities/enums";
-import { ChessPiece } from "./ChessPiece";
+import ChessPiece from "./ChessPiece";
 
 function GetPieceFromLetter(letter:string):ChessPieceName
 {

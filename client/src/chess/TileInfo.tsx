@@ -1,17 +1,16 @@
-import { ChessColour, ChessPieceName } from "../utilities/enums";
-//import ChessPiece from "ChessWebsite/client/src/chess/ChessPiece"
-import { ChessPiece } from "./ChessPiece";
+import { ChessColour, ChessPieceName, TileState } from "../utilities/enums";
+import BoardPosition from "./BoardPosition";
+import ChessPiece from "./ChessPiece";
 
-export class BoardTileInfo
+export default class TileInfo
 {
-    xPosition: number;
-    yPosition: number;
+    position: BoardPosition;
+    tileState: TileState = TileState.None;
     pieceOnTile: ChessPiece = new ChessPiece(ChessPieceName.None, ChessColour.None);
 
-    constructor(xPosition: number, yPosition: number)
+    constructor(position: BoardPosition)
     {
-        this.xPosition = xPosition;
-        this.yPosition = yPosition;
+        this.position = position;
     }
 
     SetPieceOnTile(pieceOnTile: ChessPiece)
@@ -19,12 +18,17 @@ export class BoardTileInfo
         this.pieceOnTile = pieceOnTile;
     }
 
+    SetTileState(tileState: TileState)
+    {
+        this.tileState = tileState;
+    }
+
     GetTileColour():ChessColour
     {
-        if (this.xPosition % 2 === 0)
+        if (this.position.x % 2 === 0)
         {
-            return (this.yPosition % 2 === 0 ? ChessColour.White : ChessColour.Black);
+            return (this.position.y % 2 === 0 ? ChessColour.White : ChessColour.Black);
         }
-        else return (this.yPosition % 2 === 0 ? ChessColour.Black : ChessColour.White);
+        else return (this.position.y % 2 === 0 ? ChessColour.Black : ChessColour.White);
     }
 }

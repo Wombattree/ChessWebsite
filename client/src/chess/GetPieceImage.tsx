@@ -1,5 +1,5 @@
 import { ChessPieceName, ChessColour } from "../utilities/enums";
-import { ChessPiece } from "./ChessPiece";
+import ChessPiece from "./ChessPiece";
 
 import blackPawn from "./assets/blackPawn.png";
 import whitePawn from "./assets/whitePawn.png";
@@ -14,7 +14,7 @@ import whiteQueen from "./assets/whiteQueen.png";
 import blackKing from "./assets/blackKing.png";
 import whiteKing from "./assets/whiteKing.png";
 
-export function GetPieceImage(chessPiece:ChessPiece)
+export default function GetPieceImage(chessPiece:ChessPiece)
 {
     switch(chessPiece.pieceName)
     {

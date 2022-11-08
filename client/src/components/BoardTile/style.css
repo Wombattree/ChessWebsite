@@ -1,16 +1,21 @@
 .boardTile
 {
     position: fixed;
-    z-index: 1000;
 }
 
 .boardTileImage
 {
+    position: relative;
+    top: 0px;
+    left: 0px;
+
     min-width: 100%;
     max-width: 100%;
 
     min-height: 100%;
     max-height: 100%;
+
+    user-select: none;
 }
 
 .boardTileText
@@ -18,4 +23,20 @@
     position: absolute;
     left: 2px;
     font-size: 0.75em;
+    user-select: none;
+}
+
+.boardTileActive
+{
+    background-color: rgba(77, 237, 165, 0.8);
+}
+
+.boardTileHovered
+{
+    background-color: rgba(77, 237, 165, 0.5);
+}
+
+.boardTileMovable
+{
+    background-color: rgba(77, 213, 237, 0.65);
 }
