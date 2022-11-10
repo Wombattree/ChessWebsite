@@ -6,6 +6,8 @@ export default class TileInfo
 {
     position: BoardPosition;
     tileState: TileState = TileState.None;
+    threatenedByWhite: boolean = false;
+    threatenedByBlack: boolean = false;
     pieceOnTile: ChessPiece = new ChessPiece(ChessPieceName.None, ChessColour.None);
 
     constructor(position: BoardPosition)
@@ -30,5 +32,17 @@ export default class TileInfo
             return (this.position.y % 2 === 0 ? ChessColour.White : ChessColour.Black);
         }
         else return (this.position.y % 2 === 0 ? ChessColour.Black : ChessColour.White);
+    }
+
+    SetThreat(colour: ChessColour)
+    {
+        if (colour === ChessColour.White) this.threatenedByWhite = true;
+        else this.threatenedByBlack = true;
+    }
+
+    ClearThreat()
+    {
+        this.threatenedByWhite = false;
+        this.threatenedByBlack = false;
     }
 }

@@ -37,41 +37,51 @@ export function CombinePositionWithOffset(initialPosition:BoardPosition, offset:
     return new BoardPosition(initialPosition.x + offset.x, initialPosition.y + offset.y);
 }
 
-export default function GetMovesForPiece(tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+export function SetThreatenedTiles(colour: ChessColour, viableMoves: BoardPosition[], chessBoard:TileInfo[][]):TileInfo[][]
+{
+    for (let i = 0; i < viableMoves.length; i++) 
+    {
+        chessBoard[viableMoves[i].x][viableMoves[i].y].SetThreat(colour);
+    }
+    return chessBoard;
+}
+
+export default function GetMovesForPiece(tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
     const pieceName: ChessPieceName = tile.pieceOnTile.pieceName;
     const pieceColour: ChessColour = tile.pieceOnTile.pieceColour;
+    let viableMoves: BoardPosition[] = [];
 
     switch(pieceName)
     {
         case ChessPieceName.Pawn:
-            chessBoard = GetMovesForPawn(pieceColour, tile, chessBoard);
+            viableMoves = GetMovesForPawn(pieceColour, tile, chessBoard);
             break;
 
         case ChessPieceName.Knight:
-            chessBoard = GetMovesForKnight(pieceColour, tile, chessBoard);
+            viableMoves = GetMovesForKnight(pieceColour, tile, chessBoard);
             break;
 
         case ChessPieceName.Rook:
-            chessBoard = GetMovesForRook(pieceColour, tile, chessBoard);
+            viableMoves = GetMovesForRook(pieceColour, tile, chessBoard);
             break;
 
         case ChessPieceName.Bishop:
-            chessBoard = GetMovesForBishop(pieceColour, tile, chessBoard);
+            viableMoves = GetMovesForBishop(pieceColour, tile, chessBoard);
             break;
 
         case ChessPieceName.Queen:
-            chessBoard = GetMovesForQueen(pieceColour, tile, chessBoard);
+            viableMoves = GetMovesForQueen(pieceColour, tile, chessBoard);
             break;
 
         case ChessPieceName.King:
-            chessBoard = GetMovesForKing(pieceColour, tile, chessBoard);
+            viableMoves = GetMovesForKing(pieceColour, tile, chessBoard);
             break;
 
         default:
             console.log(`Couldn't find piece! ${tile.pieceOnTile.pieceName}`);
             break;
     }
-    
-    return chessBoard;
+
+    return viableMoves;
 }

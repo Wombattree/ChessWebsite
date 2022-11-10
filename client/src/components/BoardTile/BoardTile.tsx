@@ -1,6 +1,6 @@
 import React from 'react';
 import TileInfo from '../../chess/TileInfo';
-import { ChessPieceName, TileState } from "../../utilities/enums";
+import { ChessColour, ChessPieceName, TileState } from "../../utilities/enums";
 import GetPieceImage from '../../chess/GetPieceImage';
 import './style.css';
 import BoardPosition from '../../chess/BoardPosition';
@@ -15,6 +15,8 @@ interface Props
     boardCorner: BoardPosition,
     LeftClickedOnTile: (position: BoardPosition) => void,
     HoveredOnTile: (position: BoardPosition, mouseEnter:boolean) => void,
+    showThreatenedTiles: boolean,
+    turn: ChessColour,
 }
 
 function GetTileColour(xPosition:number, yPosition:number):string
@@ -84,6 +86,14 @@ export const BoardTile: React.FC<Props> = (props: Props) =>
 
             { props.tileInfo.tileState === TileState.Moveable &&
                 <div className="boardTile boardTileMovable" style={activeStyle}></div>
+            }
+
+            { (props.showThreatenedTiles && props.tileInfo.threatenedByWhite && props.turn === ChessColour.White) &&
+                <div className="boardTile boardTileThreatened" style={activeStyle}></div>
+            }
+
+            { (props.showThreatenedTiles && props.tileInfo.threatenedByBlack && props.turn === ChessColour.Black) &&
+                <div className="boardTile boardTileThreatened" style={activeStyle}></div>
             }
             
             { props.tileInfo.pieceOnTile.pieceName !== ChessPieceName.None &&

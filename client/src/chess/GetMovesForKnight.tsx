@@ -1,5 +1,5 @@
 import { IsMoveOnBoard, GetTileNeutrality, MovementResult, CombinePositionWithOffset } from "./GetMovesForPiece";
-import { ChessColour, TileNeutrality, TileState } from "../utilities/enums";
+import { ChessColour, TileNeutrality } from "../utilities/enums";
 import BoardPosition from "./BoardPosition";
 import TileInfo from "./TileInfo";
 
@@ -25,18 +25,20 @@ function TryMove(currentPosition: BoardPosition, movementOffset: BoardPosition, 
     else return new MovementResult(positionToMoveTo, false);
 }
 
-export default function GetMovesForKnight(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+export default function GetMovesForKnight(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
     const offsets: BoardPosition[] = [upLeft, upRight, downLeft, downRight, leftUp, rightUp, leftDown, rightDown];
+    const viableMoves: BoardPosition[] = [];
 
     for (let i = 0; i < offsets.length; i++) 
     {
         let movementResult = TryMove(tile.position, offsets[i], pieceColour, chessBoard);
         if (movementResult)
         {
-            chessBoard[movementResult.newPosition.x][movementResult.newPosition.y].SetTileState(TileState.Moveable);
+            viableMoves.push(new BoardPosition(movementResult.newPosition.x, movementResult.newPosition.y));
+            //chessBoard[movementResult.newPosition.x][movementResult.newPosition.y].SetTileState(TileState.Moveable);
         }
     }
 
-    return chessBoard;
+    return viableMoves;
 }

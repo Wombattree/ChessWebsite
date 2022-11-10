@@ -40,3 +40,8 @@
 {
     background-color: rgba(77, 213, 237, 0.65);
 }
+
+.boardTileThreatened
+{
+    background-color: rgba(237, 77, 208, 0.5);
+}

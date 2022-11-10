@@ -1,5 +1,5 @@
 import { IsMoveOnBoard, GetTileNeutrality, MovementResult, CombinePositionWithOffset } from "./GetMovesForPiece";
-import { ChessColour, ChessPieceName, KingStatus, TileNeutrality, TileState } from "../utilities/enums";
+import { ChessColour, ChessPieceName, KingStatus, TileNeutrality } from "../utilities/enums";
 import BoardPosition from "./BoardPosition";
 import TileInfo from "./TileInfo";
 import * as offset from "./MovementOffsets";
@@ -18,34 +18,34 @@ function TryMove(currentPosition: BoardPosition, movementOffset: BoardPosition, 
     else return new MovementResult(positionToMoveTo, false);
 }
 
-export function GetMovesForRook(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+export function GetMovesForRook(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
     const offsets: BoardPosition[] = [offset.up, offset.right, offset.down, offset.left];
-    chessBoard = GetMovesForStandard(offsets, 7, pieceColour, tile, chessBoard);
+    const viableMoves: BoardPosition[] = GetMovesForStandard(offsets, 7, pieceColour, tile, chessBoard);
 
-    return chessBoard;
+    return viableMoves;
 }
 
-export function GetMovesForBishop(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+export function GetMovesForBishop(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
     const offsets: BoardPosition[] = [offset.upLeft, offset.upRight, offset.downLeft, offset.downRight];
-    chessBoard = GetMovesForStandard(offsets, 7, pieceColour, tile, chessBoard);
+    const viableMoves: BoardPosition[] = GetMovesForStandard(offsets, 7, pieceColour, tile, chessBoard);
 
-    return chessBoard;
+    return viableMoves;
 }
 
-export function GetMovesForQueen(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+export function GetMovesForQueen(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
     const offsets: BoardPosition[] = [offset.up, offset.right, offset.down, offset.left, offset.upLeft, offset.upRight, offset.downLeft, offset.downRight];
-    chessBoard = GetMovesForStandard(offsets, 7, pieceColour, tile, chessBoard);
+    const viableMoves: BoardPosition[] = GetMovesForStandard(offsets, 7, pieceColour, tile, chessBoard);
 
-    return chessBoard;
+    return viableMoves;
 }
 
-export function GetMovesForKing(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+export function GetMovesForKing(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
     const offsets: BoardPosition[] = [offset.up, offset.right, offset.down, offset.left, offset.upLeft, offset.upRight, offset.downLeft, offset.downRight];
-    chessBoard = GetMovesForStandard(offsets, 1, pieceColour, tile, chessBoard);
+    const viableMoves: BoardPosition[] = GetMovesForStandard(offsets, 1, pieceColour, tile, chessBoard);
 
     // Castling
     if (tile.pieceOnTile.hasMoved === false)
@@ -69,7 +69,7 @@ export function GetMovesForKing(pieceColour: ChessColour, tile:TileInfo, chessBo
                         const tileToMoveTo: TileInfo = chessBoard[positionToMoveTo.x][positionToMoveTo.y];
                         if (tileToMoveTo.pieceOnTile.pieceName === ChessPieceName.None)
                         {
-                            if (CheckKingStatus(tile) === KingStatus.Okay)
+                            if (CheckKingStatus(pieceColour, tileToMoveTo) === KingStatus.Okay)
                             {
                                 canCastle = true;
                             }
@@ -77,16 +77,21 @@ export function GetMovesForKing(pieceColour: ChessColour, tile:TileInfo, chessBo
                     }
                 }
 
-                if (canCastle) chessBoard[rookTiles[i].position.x][rookTiles[i].position.y].SetTileState(TileState.Moveable);
+                if (canCastle)
+                {
+                    viableMoves.push(new BoardPosition(rookTiles[i].position.x, rookTiles[i].position.y));
+                }
             }
         }
     }
 
-    return chessBoard;
+    return viableMoves;
 }
 
-function GetMovesForStandard(offsets: BoardPosition[], maxMovement: number, pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+function GetMovesForStandard(offsets: BoardPosition[], maxMovement: number, pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
+    const viableMoves: BoardPosition[] = [];
+
     for (let i = 0; i < offsets.length; i++) 
     {
         for (let j = 1; j <= maxMovement; j++)
@@ -94,12 +99,12 @@ function GetMovesForStandard(offsets: BoardPosition[], maxMovement: number, piec
             let movementResult = TryMove(tile.position, offsets[i], pieceColour, j, chessBoard);
             if (movementResult)
             {
-                chessBoard[movementResult.newPosition.x][movementResult.newPosition.y].SetTileState(TileState.Moveable);
+                viableMoves.push(new BoardPosition(movementResult.newPosition.x, movementResult.newPosition.y));
                 if (movementResult.isEnemyPieceOnTile) break;
             }
             else break;
         }
     }
 
-    return chessBoard;
+    return viableMoves;
 }

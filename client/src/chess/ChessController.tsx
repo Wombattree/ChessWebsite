@@ -86,7 +86,7 @@ export function MovePiece(positionToMoveFrom: BoardPosition, positionToMoveTo: B
     return [chessBoard, displayPromotion];
 }
 
-function Checkmate(victor: ChessColour, EndGame: (victor: ChessColour) => void)
+export function Checkmate(victor: ChessColour, EndGame: (victor: ChessColour) => void)
 {
     EndGame(victor);
 }

@@ -1,11 +1,12 @@
 import React from 'react';
 import BoardPosition from '../../chess/BoardPosition';
 import { ChessColour } from '../../utilities/enums';
+import { GameState } from '../Chess/Chess';
 import './style.css';
 
 interface Props
 {
-	victor: ChessColour | null,
+	gameState: GameState,
     currentTurn: ChessColour,
     tileSize: number,
     boardCorner: BoardPosition,
@@ -13,7 +14,7 @@ interface Props
 
 function GetTopPosition(cornerPosition:number, tileSize:number):string
 {
-    return `${cornerPosition - 0.75 * tileSize}px`
+    return `${cornerPosition - 1.5 * tileSize}px`
 }
 
 function GetLeftPosition(tileSize:number):string
@@ -39,6 +40,14 @@ function GetCurrentTurnMessage(currentTurn: ChessColour)
     return currentTurn === ChessColour.White ? "White" : "Black";
 }
 
+function GetCheckMessage(whiteInCheck: boolean, blackInCheck: boolean):string
+{
+    if (whiteInCheck && blackInCheck) return "Both kings are in check";
+    if (whiteInCheck) return "The white king is in check";
+    if (blackInCheck) return "The black king is in check";
+    return "";
+}
+
 export default function DisplayInformation(props: Props) 
 {
     const topOffset = GetTopPosition(props.boardCorner.x, props.tileSize);
@@ -52,11 +61,11 @@ export default function DisplayInformation(props: Props)
         width: width,
     }
 
-    if (props.victor)
+    if (props.gameState.victor)
     {
         return (
             <div className="informationDisplay" style={style}>
-                {GetVictoryMessage(props.victor)}
+                {GetVictoryMessage(props.gameState.victor)}
             </div>
         );
     }
@@ -64,7 +73,8 @@ export default function DisplayInformation(props: Props)
     {
         return (
             <div className="informationDisplay" style={style}>
-                Current Turn: {GetCurrentTurnMessage(props.currentTurn)}
+                <p>Current Turn: {GetCurrentTurnMessage(props.currentTurn)}</p>
+                <p>{GetCheckMessage(props.gameState.whiteInCheck, props.gameState.blackInCheck)}</p>
             </div>
         )
     }

@@ -1,12 +1,9 @@
-import { KingStatus } from "../utilities/enums";
+import { ChessColour, KingStatus } from "../utilities/enums";
 import TileInfo from "./TileInfo";
 
-function GetAllThreatenedTiles()
+export default function CheckKingStatus(kingColour: ChessColour, tileToCheck:TileInfo):KingStatus
 {
-
-}
-
-export default function CheckKingStatus(kingTile:TileInfo):KingStatus
-{
+    if (kingColour === ChessColour.White && tileToCheck.threatenedByBlack) return KingStatus.Check;
+    if (kingColour === ChessColour.Black && tileToCheck.threatenedByWhite) return KingStatus.Check;
     return KingStatus.Okay;
 }

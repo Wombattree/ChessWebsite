@@ -1,5 +1,5 @@
 import { IsMoveOnBoard, GetTileNeutrality, MovementResult, CombinePositionWithOffset } from "./GetMovesForPiece";
-import { ChessColour, TileNeutrality, TileState } from "../utilities/enums";
+import { ChessColour, TileNeutrality } from "../utilities/enums";
 import BoardPosition from "./BoardPosition";
 import TileInfo from "./TileInfo";
 import * as offset from "./MovementOffsets";
@@ -35,16 +35,18 @@ function TryMoveDiagonal(currentPosition: BoardPosition, movementOffsetDiagonal:
     return new MovementResult(positionToMoveToDiagonal, true);
 }
 
-export default function GetMovesForPawn(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):TileInfo[][]
+export default function GetMovesForPawn(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
 {
     const maxDistanceForward: number = tile.pieceOnTile.hasMoved ? 1 : 2;
+    const viableMoves: BoardPosition[] = [];
         
     for (let i = 1; i <= maxDistanceForward; i++)
     {
         let movementResult = TryMoveForward(tile.position, (pieceColour === ChessColour.White) ? offset.up : offset.down, pieceColour, i, chessBoard);
         if (movementResult)
         {
-            chessBoard[movementResult.newPosition.x][movementResult.newPosition.y].SetTileState(TileState.Moveable);
+            viableMoves.push(new BoardPosition(movementResult.newPosition.x, movementResult.newPosition.y));
+            //chessBoard[movementResult.newPosition.x][movementResult.newPosition.y].SetTileState(TileState.Moveable);
             if (movementResult.isEnemyPieceOnTile) break;
         }
         else break;
@@ -53,14 +55,16 @@ export default function GetMovesForPawn(pieceColour: ChessColour, tile:TileInfo,
     let movementResultDiagonalLeft = TryMoveDiagonal(tile.position, (pieceColour === ChessColour.White) ? offset.upLeft : offset.downLeft, offset.left, pieceColour, chessBoard);
     if (movementResultDiagonalLeft)
     {
-        chessBoard[movementResultDiagonalLeft.newPosition.x][movementResultDiagonalLeft.newPosition.y].SetTileState(TileState.Moveable);
+        viableMoves.push(new BoardPosition(movementResultDiagonalLeft.newPosition.x, movementResultDiagonalLeft.newPosition.y));
+        //chessBoard[movementResultDiagonalLeft.newPosition.x][movementResultDiagonalLeft.newPosition.y].SetTileState(TileState.Moveable);
     }
 
     let movementResultDiagonalRight = TryMoveDiagonal(tile.position, (pieceColour === ChessColour.White) ? offset.upRight : offset.downRight, offset.right, pieceColour, chessBoard);
     if (movementResultDiagonalRight)
     {
-        chessBoard[movementResultDiagonalRight.newPosition.x][movementResultDiagonalRight.newPosition.y].SetTileState(TileState.Moveable);
+        viableMoves.push(new BoardPosition(movementResultDiagonalRight.newPosition.x, movementResultDiagonalRight.newPosition.y));
+        //chessBoard[movementResultDiagonalRight.newPosition.x][movementResultDiagonalRight.newPosition.y].SetTileState(TileState.Moveable);
     }
 
-    return chessBoard;
+    return viableMoves;
 }

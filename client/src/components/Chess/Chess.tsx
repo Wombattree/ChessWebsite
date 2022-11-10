@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useState } from 'react';
 import './style.css';
 import { BoardTile } from '../BoardTile/BoardTile';
 import InitialiseChessBoard from '../../chess/InitialiseChessBoard';
 import { ChessColour, ChessPieceName, TileState } from '../../utilities/enums';
-import GetMovesForPiece from '../../chess/GetMovesForPiece';
+import GetMovesForPiece, { SetThreatenedTiles } from '../../chess/GetMovesForPiece';
 import TileInfo from '../../chess/TileInfo';
 import BoardPosition from '../../chess/BoardPosition';
 import { ClearBoard, MovePiece } from '../../chess/ChessController';
@@ -12,11 +13,18 @@ import DisplayInformation from '../DisplayInformation/DisplayInformation';
 
 const startingFEN: string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
-class GameState
+export class GameState
 {
 	whiteInCheck: boolean = false;
 	blackInCheck: boolean = false;
 	victor: ChessColour | null = null;
+
+	constructor(whiteInCheck: boolean, blackInCheck: boolean, victor: ChessColour | null)
+	{
+		this.whiteInCheck = whiteInCheck;
+		this.blackInCheck = blackInCheck;
+		this.victor = victor;
+	}
 }
 
 function GetBoardTileSize(screenWidth:number, screenHeight:number):number
@@ -35,7 +43,41 @@ export default function Chess()
 	const [currentTurn, SetCurrentTurn] = useState(ChessColour.White);
 	const [selectedPiecePosition, UpdateSelectedPiecePosition] = useState<BoardPosition | null>(null);
 	const [displayPromotionChoices, SetDisplayPromotionChoices] = useState(false);
-	const [currentGameState, SetGameState] = useState(new GameState());
+	const [currentGameState, SetGameState] = useState(new GameState(false, false, null));
+
+	const showThreatenedTiles: boolean = true;
+
+	useEffect(() => { NewTurn(); }, []);
+
+	function GetKing(colour: ChessColour)
+	{
+		for (let x = 0; x < 8; x++) {
+			for (let y = 0; y < 8; y++)
+			{
+				const piece = chessBoard[x][y].pieceOnTile;
+				if (piece.pieceName === ChessPieceName.King)
+				{
+					if (piece.pieceColour === colour) return chessBoard[x][y];
+				}
+			}
+		}
+	}
+
+	function UpdateGameState()
+	{
+		const whiteKing = GetKing(ChessColour.White);
+		const whiteInCheck = whiteKing ? (whiteKing.threatenedByBlack ? true : false) : false;
+		const blackKing = GetKing(ChessColour.Black);
+    	const blackInCheck = blackKing ? (blackKing.threatenedByWhite ? true : false) : false;
+		const checkmateStatus = CheckmateStatus();
+
+		SetGameState(new GameState(whiteInCheck, blackInCheck, checkmateStatus));
+	}
+
+	function CheckmateStatus():ChessColour | null
+	{
+		return null;
+	}
 
 	function LeftClickedOnTile(position: BoardPosition)
 	{	
@@ -71,7 +113,12 @@ export default function Chess()
 		if (tileState === TileState.Active)
 		{
 			UpdateSelectedPiecePosition(position);
-			chessBoard = GetMovesForPiece(tile, chessBoard);
+
+			for (let i = 0; i < tile.pieceOnTile.viableMoves.length; i++) 
+			{
+				const move = tile.pieceOnTile.viableMoves[i];
+				chessBoard[move.x][move.y].SetTileState(TileState.Moveable);
+			}
 		}
 
 		chessBoard[position.x][position.y].SetTileState(tileState);
@@ -81,7 +128,22 @@ export default function Chess()
 
 	function NewTurn()
 	{
-		
+		for (let x = 0; x < 8; x++) {
+			for (let y = 0; y < 8; y++)
+			{
+				const tile = chessBoard[x][y];
+				const pieceOnTile = tile.pieceOnTile;
+				tile.ClearThreat();
+				if (pieceOnTile.pieceName !== ChessPieceName.None)
+				{
+					const viableMoves = GetMovesForPiece(tile, chessBoard);
+					tile.pieceOnTile.SetViableMoves(viableMoves);
+					SetThreatenedTiles(pieceOnTile.pieceColour, viableMoves, chessBoard);
+				}
+			}
+		}
+
+		UpdateGameState();
 	}
 
 	function EndTurn()
@@ -89,6 +151,8 @@ export default function Chess()
 		UpdateSelectedPiecePosition(null);
 		if (currentTurn === ChessColour.White) SetCurrentTurn(ChessColour.Black);
 		else SetCurrentTurn(ChessColour.White);
+
+		NewTurn();
 	}
 
 	function EndGame(victor: ChessColour)
@@ -137,13 +201,13 @@ export default function Chess()
 	return (
 		<div>
 			<DisplayInformation
-				victor={currentGameState.victor}
+				gameState={currentGameState}
 				currentTurn={currentTurn} 
 				tileSize={boardTileSize} 
-				boardCorner={boardCornerPosition} 
+				boardCorner={boardCornerPosition}
 			/>
 
-			{chessBoard.map((boardRow) => 
+			{ chessBoard.map((boardRow) => 
 			(
 				boardRow.map((boardTileInfo) => 
 				(
@@ -154,6 +218,8 @@ export default function Chess()
 						boardCorner={boardCornerPosition} 
 						LeftClickedOnTile={LeftClickedOnTile}
 						HoveredOnTile={HoveredOnTile}
+						showThreatenedTiles={showThreatenedTiles}
+						turn={currentTurn}
 					/>
 				))
           	))}
