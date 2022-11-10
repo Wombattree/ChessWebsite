@@ -20,12 +20,16 @@ function TryMoveDiagonal(currentPosition: BoardPosition, movementOffsetDiagonal:
     const tileToMoveTo: TileInfo = chessBoard[positionToMoveToDiagonal.x][positionToMoveToDiagonal.y];
 
     if (IsMoveOnBoard(positionToMoveToDiagonal) === false) return null;
-    if (GetTileNeutrality(tileToMoveTo, pieceColour) !== TileNeutrality.Hostile)
+
+    const tileNeutrality = GetTileNeutrality(tileToMoveTo, pieceColour);
+    if (tileNeutrality === TileNeutrality.Friendly) return null;
+    if (tileNeutrality !== TileNeutrality.Hostile)
     {
         //En passant
         const positionToMoveToSide: BoardPosition = CombinePositionWithOffset(currentPosition, movementOffsetSide);
         const tileToSide: TileInfo = chessBoard[positionToMoveToSide.x][positionToMoveToSide.y];
         if (GetTileNeutrality(tileToSide, pieceColour) !== TileNeutrality.Hostile) return null;
+        if (tileToSide.pieceOnTile.movedTwoSpacesLastTurn === false) return null;
         else return new MovementResult(positionToMoveToDiagonal, true);
     }
     return new MovementResult(positionToMoveToDiagonal, true);

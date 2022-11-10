@@ -1,6 +1,12 @@
 import { KingStatus } from "../utilities/enums";
+import TileInfo from "./TileInfo";
 
-export default function CheckKingStatus():KingStatus
+function GetAllThreatenedTiles()
+{
+
+}
+
+export default function CheckKingStatus(kingTile:TileInfo):KingStatus
 {
     return KingStatus.Okay;
 }

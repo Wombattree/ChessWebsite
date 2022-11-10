@@ -1,0 +1,13 @@
+.displayPromotionHeader
+{
+    text-align: center;
+    font-size: larger;
+    font-weight: bolder;
+    position: fixed;
+}
+
+.displayPromotionImage
+{
+    position: fixed;
+    user-select: none;
+}

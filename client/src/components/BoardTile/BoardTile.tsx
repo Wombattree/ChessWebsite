@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import TileInfo from '../../chess/TileInfo';
 import { ChessPieceName, TileState } from "../../utilities/enums";
 import GetPieceImage from '../../chess/GetPieceImage';
@@ -40,10 +40,10 @@ export const BoardTile: React.FC<Props> = (props: Props) =>
         props.LeftClickedOnTile(new BoardPosition(props.tileInfo.position.x, props.tileInfo.position.y));
     }
 
-    function ToggleTileHover(mouseEnter:boolean)
-    {
-        props.HoveredOnTile(new BoardPosition(props.tileInfo.position.x, props.tileInfo.position.y), mouseEnter);
-    }
+    // function ToggleTileHover(mouseEnter:boolean)
+    // {
+    //     props.HoveredOnTile(new BoardPosition(props.tileInfo.position.x, props.tileInfo.position.y), mouseEnter);
+    // }
 
     const topOffset = GetPosition(props.tileInfo.position.x, props.boardCorner.x, props.tileSize);
     const leftOffset = GetPosition(props.tileInfo.position.y, props.boardCorner.y, props.tileSize);
