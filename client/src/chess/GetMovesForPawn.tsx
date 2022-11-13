@@ -1,4 +1,4 @@
-import { IsMoveOnBoard, GetTileNeutrality, CombinePositionWithOffset, WouldMovePutYourKingInCheck } from "./GetMovesForPiece";
+import { IsMoveOnBoard, GetTileNeutrality, CombinePositionWithOffset } from "./GetMovesForPiece";
 import { ChessColour, BoardTileNeutrality } from "../utilities/enums";
 import MovementOffsets from "./MovementOffsets";
 import { BoardPosition, BoardTileData } from "./BoardClasses";
@@ -11,7 +11,10 @@ function TryMoveForward(currentPosition: BoardPosition, movementOffset: BoardPos
 
     const tileToMoveTo: BoardTileData = chessBoard[positionToMoveTo.x][positionToMoveTo.y];
     if (GetTileNeutrality(tileToMoveTo, pieceColour) !== BoardTileNeutrality.Empty) return null;
-    return new MovementInformation(positionToMoveTo, false);
+    
+    const move = new MovementInformation(positionToMoveTo, false);
+    move.MoveIsNotAttacking();
+    return move;
 }
 
 function TryMoveDiagonal(currentPosition: BoardPosition, movementOffsetDiagonal: BoardPosition, movementOffsetSide: BoardPosition, pieceColour: ChessColour, chessBoard:BoardTileData[][]):MovementInformation | null
@@ -83,7 +86,6 @@ export default function GetMovesForPawn(pieceColour: ChessColour, tile:BoardTile
 function TryAddMove(pieceColour: ChessColour, tile:BoardTileData, move: MovementInformation): MovementInformation | null
 {
     if (ShouldPawnBePromoted(pieceColour, move.newPosition)) move.MoveIsPromotion();
-    if (WouldMovePutYourKingInCheck(tile, move)) return null;
     return move;
 }
 

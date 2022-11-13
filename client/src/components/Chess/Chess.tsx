@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import './style.css';
 import { ChessColour, ChessPieceType } from '../../utilities/enums';
-import {ChessController} from '../../chess/ChessController';
+import ChessController from '../../chess/ChessController';
 import DisplayPromotion from '../DisplayPromotion/DisplayPromotion';
 import DisplayInformation from '../DisplayInformation/DisplayInformation';
 import { BoardPosition, BoardTileData } from '../../chess/BoardClasses';

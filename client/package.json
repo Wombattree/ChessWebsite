@@ -16,6 +16,7 @@
     "bulma": "^0.9.4",
     "graphql": "^16.6.0",
     "jwt-decode": "^2.2.0",
+    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-bulma-components": "^4.1.0",
     "react-dom": "^18.2.0",
@@ -50,5 +51,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.188"
   }
 }

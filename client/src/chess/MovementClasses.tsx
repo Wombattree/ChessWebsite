@@ -14,6 +14,8 @@ export class MovementInformation
     private isMoveEnPassant: boolean = false;
     private enPassantPosition: BoardPosition | null = null;
 
+    private isMoveAttacking: boolean = true;
+
     constructor(newPosition: BoardPosition, isEnemyPieceOnTile: boolean)
     {
         this.newPosition = newPosition;
@@ -43,4 +45,7 @@ export class MovementInformation
     }
     GetIsMoveEnPassant(): boolean { return this.isMoveEnPassant; }
     GetEnPassantPosition(): BoardPosition | null { return this.enPassantPosition; }
+
+    MoveIsNotAttacking() { this.isMoveAttacking = false; }
+    GetIsMoveAttacking(): boolean { return this.isMoveAttacking; }
 }
