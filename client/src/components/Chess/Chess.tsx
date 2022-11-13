@@ -1,31 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import './style.css';
-import { BoardTile } from '../BoardTile/BoardTile';
-import InitialiseChessBoard from '../../chess/InitialiseChessBoard';
-import { ChessColour, ChessPieceName, TileState } from '../../utilities/enums';
-import GetMovesForPiece, { SetThreatenedTiles } from '../../chess/GetMovesForPiece';
-import TileInfo from '../../chess/TileInfo';
-import BoardPosition from '../../chess/BoardPosition';
-import { ClearBoard, MovePiece } from '../../chess/ChessController';
+import { ChessColour, ChessPieceType } from '../../utilities/enums';
+import {ChessController} from '../../chess/ChessController';
 import DisplayPromotion from '../DisplayPromotion/DisplayPromotion';
 import DisplayInformation from '../DisplayInformation/DisplayInformation';
-
-const startingFEN: string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-
-export class GameState
-{
-	whiteInCheck: boolean = false;
-	blackInCheck: boolean = false;
-	victor: ChessColour | null = null;
-
-	constructor(whiteInCheck: boolean, blackInCheck: boolean, victor: ChessColour | null)
-	{
-		this.whiteInCheck = whiteInCheck;
-		this.blackInCheck = blackInCheck;
-		this.victor = victor;
-	}
-}
+import { BoardPosition, BoardTileData } from '../../chess/BoardClasses';
+import { ChessData, GameState } from '../../chess/InformationClasses';
+import BoardTile from '../BoardTile/BoardTile';
+import DebugInformation from '../DebugInformation/DebugInformation';
 
 function GetBoardTileSize(screenWidth:number, screenHeight:number):number
 {
@@ -39,158 +22,59 @@ function GetBoardCornerPosition(screenWidth:number, screenHeight:number, boardTi
 
 export default function Chess()
 {
-	const [chessBoard, UpdateChessBoard] = useState(InitialiseChessBoard(startingFEN));
+	const [chessBoard, SetChessBoard] = useState<BoardTileData[][]>(ChessData.InitialiseChessBoard());
 	const [currentTurn, SetCurrentTurn] = useState(ChessColour.White);
-	const [selectedPiecePosition, UpdateSelectedPiecePosition] = useState<BoardPosition | null>(null);
 	const [displayPromotionChoices, SetDisplayPromotionChoices] = useState(false);
 	const [currentGameState, SetGameState] = useState(new GameState(false, false, null));
 
-	const showThreatenedTiles: boolean = true;
+	const [displayDebugInfo, SetDisplayDebugInfo] = useState<BoardTileData | null>(null);
 
-	useEffect(() => { NewTurn(); }, []);
+	const debugMode: boolean = true;
 
-	function GetKing(colour: ChessColour)
+	useEffect(() => { ChessController.StartGame(Update); }, []);
+
+	function Update()
 	{
-		for (let x = 0; x < 8; x++) {
-			for (let y = 0; y < 8; y++)
-			{
-				const piece = chessBoard[x][y].pieceOnTile;
-				if (piece.pieceName === ChessPieceName.King)
-				{
-					if (piece.pieceColour === colour) return chessBoard[x][y];
-				}
-			}
-		}
-	}
-
-	function UpdateGameState()
-	{
-		const whiteKing = GetKing(ChessColour.White);
-		const whiteInCheck = whiteKing ? (whiteKing.threatenedByBlack ? true : false) : false;
-		const blackKing = GetKing(ChessColour.Black);
-    	const blackInCheck = blackKing ? (blackKing.threatenedByWhite ? true : false) : false;
-		const checkmateStatus = CheckmateStatus();
-
-		SetGameState(new GameState(whiteInCheck, blackInCheck, checkmateStatus));
-	}
-
-	function CheckmateStatus():ChessColour | null
-	{
-		return null;
+		SetChessBoard(ChessData.GetChessBoard());
+		SetDisplayPromotionChoices(ChessData.GetDisplayPromotion());
+		SetCurrentTurn(ChessData.GetCurrentTurn());
+		SetGameState(ChessData.GetGameState());
 	}
 
 	function LeftClickedOnTile(position: BoardPosition)
 	{	
-		let chessBoardCopy = [...chessBoard];
-		const tile = chessBoard[position.x][position.y];
-
-		if (tile.tileState === TileState.Moveable && selectedPiecePosition)
-		{
-			const [updatedChessBoard, displayPromotion] = MovePiece(new BoardPosition(selectedPiecePosition.x, selectedPiecePosition.y), position, chessBoardCopy, EndGame);
-			chessBoardCopy = updatedChessBoard;
-			SetDisplayPromotionChoices(displayPromotion);
-			UpdateSelectedPiecePosition(position);
-			chessBoardCopy = ClearBoard(chessBoardCopy, true, currentTurn);
-			if (displayPromotion === false) EndTurn();
-		}
-		else if (tile.pieceOnTile.pieceName !== ChessPieceName.None)
-		{
-			if (tile.pieceOnTile.pieceColour === currentTurn)
-			{
-				chessBoardCopy = ToggleTileSelected(position, tile, chessBoardCopy)
-			}
-		}
-		else chessBoardCopy = ClearBoard(chessBoardCopy, false, ChessColour.None);
-
-		UpdateChessBoard(chessBoardCopy);
+		ChessController.HandleLeftClickOnTile(position, Update);
 	}
 
-	function ToggleTileSelected(position: BoardPosition, tile: TileInfo, chessBoard: TileInfo[][]):TileInfo[][]
+	function ChoosePromotion(promotionType: ChessPieceType)
 	{
-		const tileState:TileState = (tile.tileState === TileState.Active) ? TileState.None : TileState.Active;
-		chessBoard = ClearBoard(chessBoard, false, ChessColour.None);
-
-		if (tileState === TileState.Active)
-		{
-			UpdateSelectedPiecePosition(position);
-
-			for (let i = 0; i < tile.pieceOnTile.viableMoves.length; i++) 
-			{
-				const move = tile.pieceOnTile.viableMoves[i];
-				chessBoard[move.x][move.y].SetTileState(TileState.Moveable);
-			}
-		}
-
-		chessBoard[position.x][position.y].SetTileState(tileState);
-
-		return chessBoard;
-	}
-
-	function NewTurn()
-	{
-		for (let x = 0; x < 8; x++) {
-			for (let y = 0; y < 8; y++)
-			{
-				const tile = chessBoard[x][y];
-				const pieceOnTile = tile.pieceOnTile;
-				tile.ClearThreat();
-				if (pieceOnTile.pieceName !== ChessPieceName.None)
-				{
-					const viableMoves = GetMovesForPiece(tile, chessBoard);
-					tile.pieceOnTile.SetViableMoves(viableMoves);
-					SetThreatenedTiles(pieceOnTile.pieceColour, viableMoves, chessBoard);
-				}
-			}
-		}
-
-		UpdateGameState();
-	}
-
-	function EndTurn()
-	{
-		UpdateSelectedPiecePosition(null);
-		if (currentTurn === ChessColour.White) SetCurrentTurn(ChessColour.Black);
-		else SetCurrentTurn(ChessColour.White);
-
-		NewTurn();
-	}
-
-	function EndGame(victor: ChessColour)
-	{
-		const gameState = currentGameState;
-		gameState.victor = victor;
-		SetGameState(gameState);
+		ChessController.HandleChoosePromotion(promotionType, Update);
 	}
 
 	function HoveredOnTile(position: BoardPosition, mouseEnter:boolean)
 	{	
-		let chessBoardCopy = [...chessBoard];
-		const tile = chessBoard[position.x][position.y];
+		if (mouseEnter) SetDisplayDebugInfo(ChessData.GetTileAtPosition(position));
+		else SetDisplayDebugInfo(null);
+	}
 
-		let tileState:TileState = TileState.None;
+	// function HoveredOnTile(position: BoardPosition, mouseEnter:boolean)
+	// {	
+	// 	let chessBoardCopy = [...chessBoard];
+	// 	const tile = chessBoard[position.x][position.y];
 
-		if (tile.tileState !== TileState.Active)
-		{
-			if (mouseEnter) tileState = TileState.Hovered;
-			else tileState = TileState.None;
-		}
-		else tileState = TileState.Active;
+	// 	let tileState:BoardTileState = BoardTileState.None;
+
+	// 	if (tile.tileState !== BoardTileState.Active)
+	// 	{
+	// 		if (mouseEnter) tileState = BoardTileState.Hovered;
+	// 		else tileState = BoardTileState.None;
+	// 	}
+	// 	else tileState = BoardTileState.Active;
 		
-		chessBoardCopy[position.x][position.y].SetTileState(tileState);
+	// 	chessBoardCopy[position.x][position.y].SetTileState(tileState);
 
-		UpdateChessBoard(chessBoardCopy);
-	}
-
-	function ChoosePromotion(promotionPiece: ChessPieceName)
-	{
-		if (selectedPiecePosition)
-		{
-			const promotionTile = chessBoard[selectedPiecePosition.x][selectedPiecePosition.y];
-			promotionTile.pieceOnTile.pieceName = promotionPiece;
-			SetDisplayPromotionChoices(false);
-		}
-		EndTurn();
-	}
+	// 	UpdateChessBoard(chessBoardCopy);
+	// }
 	
 	const screenWidth:number = window.innerWidth;
 	const screenHeight:number = window.innerHeight;
@@ -207,19 +91,18 @@ export default function Chess()
 				boardCorner={boardCornerPosition}
 			/>
 
-			{ chessBoard.map((boardRow) => 
-			(
-				boardRow.map((boardTileInfo) => 
+			{ chessBoard.map((boardRow) => (
+				boardRow.map((boardTileData) => 
 				(
-					<BoardTile 
-						key={`${boardTileInfo.position.x}, ${boardTileInfo.position.y}`} 
-						tileInfo={boardTileInfo} 
+					<BoardTile
+						key={`${boardTileData.position.x}, ${boardTileData.position.y}`} 
+						boardTileData={boardTileData} 
 						tileSize={boardTileSize} 
 						boardCorner={boardCornerPosition} 
 						LeftClickedOnTile={LeftClickedOnTile}
 						HoveredOnTile={HoveredOnTile}
-						showThreatenedTiles={showThreatenedTiles}
-						turn={currentTurn}
+						debugMode={debugMode}
+						currentTurn={currentTurn}
 					/>
 				))
           	))}
@@ -232,6 +115,14 @@ export default function Chess()
 					ChoosePromotion={ChoosePromotion}
 				/>
             }
+
+			{ displayDebugInfo &&
+				<DebugInformation
+					tile={displayDebugInfo}
+					tileSize={boardTileSize} 
+					boardCorner={boardCornerPosition}
+				/>
+		}	
 		</div>
 	);
 }

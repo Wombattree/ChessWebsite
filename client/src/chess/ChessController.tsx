@@ -1,112 +1,180 @@
-import { ChessPieceName, ChessColour, TileState } from "../utilities/enums";
-import BoardPosition from "./BoardPosition";
-import ChessPiece from "./ChessPiece";
-import { CombinePositionWithOffset } from "./GetMovesForPiece";
-import TileInfo from "./TileInfo";
-import * as offset from './MovementOffsets';
+import { ChessPieceType, ChessColour, BoardTileState } from "../utilities/enums";
+import GetMovesForPiece, { SetThreatenedTiles } from "./GetMovesForPiece";
+import { BoardTileData, BoardPosition } from "./BoardClasses";
+import { ChessData, GameState } from "./InformationClasses";
+import { ChessMovementController } from "./ChessMovementController";
 
-export function MovePiece(positionToMoveFrom: BoardPosition, positionToMoveTo: BoardPosition, chessBoard: TileInfo[][], EndGame: (victor: ChessColour) => void):[TileInfo[][], boolean]
+export class ChessController
 {
-    const tileToMoveFrom = chessBoard[positionToMoveFrom.x][positionToMoveFrom.y];
-    const tileToMoveTo = chessBoard[positionToMoveTo.x][positionToMoveTo.y];
-    let displayPromotion = false;
-    let checkmate = false;
-
-    const tileToMoveFromName: ChessPieceName = tileToMoveFrom.pieceOnTile.pieceName;
-    const tileToMoveFromColour: ChessColour = tileToMoveFrom.pieceOnTile.pieceColour;
-
-    const tileToMoveToName: ChessPieceName = tileToMoveTo.pieceOnTile.pieceName;
-    const tileToMoveToColour: ChessColour = tileToMoveTo.pieceOnTile.pieceColour;
-
-    if (tileToMoveFromName === ChessPieceName.King && tileToMoveToName === ChessPieceName.Rook && tileToMoveFromColour === tileToMoveToColour)
+    static StartGame(Update:() => void)
     {
-        //Castling
-        const toRight: boolean = (tileToMoveTo.position.y > tileToMoveFrom.position.y);
-        const offsetToRook: BoardPosition = toRight ? offset.right : offset.left;
-        const offsetToKing: BoardPosition = toRight ? offset.left : offset.right;
-
-        const spacesForKingToMove = 2;
-        const kingMovementOffsetWithDistance = new BoardPosition(offsetToRook.x * spacesForKingToMove, offsetToRook.y * spacesForKingToMove);
-        const positionForKing: BoardPosition = CombinePositionWithOffset(positionToMoveFrom, kingMovementOffsetWithDistance);
-
-        const spacesForRookToMove = toRight ? 2 : 3;
-        const rookMovementOffsetWithDistance = new BoardPosition(offsetToKing.x * spacesForRookToMove, offsetToKing.y * spacesForRookToMove);
-        const positionForRook: BoardPosition = CombinePositionWithOffset(positionToMoveTo, rookMovementOffsetWithDistance);
-
-        chessBoard[positionForKing.x][positionForKing.y].SetPieceOnTile(tileToMoveFrom.pieceOnTile);
-        chessBoard[positionForRook.x][positionForRook.y].SetPieceOnTile(tileToMoveTo.pieceOnTile);
-
-        tileToMoveFrom.SetPieceOnTile(new ChessPiece(ChessPieceName.None, ChessColour.None));
-        tileToMoveTo.SetPieceOnTile(new ChessPiece(ChessPieceName.None, ChessColour.None));
+        ChessData.InitialiseChessBoard();
+        ChessController.NewTurn();
+        Update();
     }
-    else
-    {   
-        if (tileToMoveToName === ChessPieceName.King) 
-        {
-            checkmate = true;
-            Checkmate(tileToMoveFromColour, EndGame);
-        }
-
-        tileToMoveTo.SetPieceOnTile(tileToMoveFrom.pieceOnTile);
-        tileToMoveFrom.SetPieceOnTile(new ChessPiece(ChessPieceName.None, ChessColour.None));
-    }
-
-    if (tileToMoveTo.pieceOnTile.pieceName === ChessPieceName.Pawn)
+    
+    static NewTurn()
     {
-        //Moved two spaces
-        if ((positionToMoveFrom.x === 6 && positionToMoveTo.x === 4) || (positionToMoveFrom.x === 1 && positionToMoveTo.x === 3)) 
-        {
-            tileToMoveTo.pieceOnTile.PieceMovedTwoSpaces();
-        }
-        else
-        {
-            const pieceColour = tileToMoveTo.pieceOnTile.pieceColour;
-
-            //En passant
-            const potentialEnPassantPosition = CombinePositionWithOffset(positionToMoveTo, (pieceColour === ChessColour.White ? offset.down : offset.up));
-            const potentialEnPassantTile = chessBoard[potentialEnPassantPosition.x][potentialEnPassantPosition.y];
-            if (potentialEnPassantTile.pieceOnTile.pieceName === ChessPieceName.Pawn && potentialEnPassantTile.pieceOnTile.movedTwoSpacesLastTurn)
+        for (let x = 0; x < 8; x++) {
+            for (let y = 0; y < 8; y++)
             {
-                potentialEnPassantTile.SetPieceOnTile(new ChessPiece(ChessPieceName.None, ChessColour.None));
+                ChessData.GetTileAtPosition(new BoardPosition(x, y)).ClearThreat();
             }
+        }
 
-            //Promotion
-            if (checkmate === false)
+        for (let x = 0; x < 8; x++) {
+            for (let y = 0; y < 8; y++)
             {
-                if ((pieceColour === ChessColour.White && tileToMoveTo.position.x === 0) || (pieceColour === ChessColour.Black && tileToMoveTo.position.x === 7))
+                const tile = ChessData.GetTileAtPosition(new BoardPosition(x, y));
+                const pieceOnTile = tile.pieceOnTile;
+    
+                if (pieceOnTile.type !== ChessPieceType.None)
                 {
-                    displayPromotion = true;
+                    pieceOnTile.viableMoves = GetMovesForPiece(tile);
+                    SetThreatenedTiles(pieceOnTile);
+                }
+            }
+        }
+        
+        ChessController.UpdateGameState();
+    }
+    
+    static EndTurn()
+    {
+        ChessData.SetSelectedPiece(null);
+        ChessData.ToggleCurrentTurn();
+        ChessController.ClearBoard(ChessData.GetChessBoard(), true);
+        ChessController.NewTurn();
+    }
+    
+    static EndGame(victor: ChessColour)
+    {
+        const gameState = ChessData.GetGameState();
+        ChessData.SetGameState(new GameState(gameState.whiteInCheck, gameState.whiteInCheck, victor));
+    }
+    
+    static HandleLeftClickOnTile(positionClicked: BoardPosition, Update:() => void)
+    {	
+        let updatedChessBoard: BoardTileData[][] = [...ChessData.GetChessBoard()];
+    
+        const tileClicked = ChessData.GetTileAtPosition(positionClicked);
+        let displayPromotion = false;
+        let tileSelected = ChessData.GetSelectedPiece();
+    
+        //If the tile clicked can be moved to and a piece is currently selected
+        if (tileClicked.tileState === BoardTileState.Moveable && tileSelected)
+        {
+            [updatedChessBoard, displayPromotion] = ChessMovementController.MovePiece(tileSelected.pieceOnTile, tileSelected, tileClicked, updatedChessBoard);
+            ChessData.SetSelectedPiece(ChessData.GetTileAtPosition(positionClicked));
+            updatedChessBoard = ChessController.ClearBoard(updatedChessBoard);
+    
+            if (displayPromotion === false) 
+            {
+                ChessController.EndTurn();
+            }
+        }
+        //If there is a piece on the tile and it is the colour of the current turn
+        else if (tileClicked.pieceOnTile.type !== ChessPieceType.None && tileClicked.pieceOnTile.colour === ChessData.GetCurrentTurn())
+        {
+            updatedChessBoard = ChessController.ToggleTileSelected(positionClicked, tileClicked, updatedChessBoard)
+        }
+        //If the tile was blank
+        else updatedChessBoard = ChessController.ClearBoard(updatedChessBoard);
+    
+        ChessData.SetChessBoard(updatedChessBoard);
+        ChessData.SetDisplayPromotion(displayPromotion);
+
+        Update();
+    }
+    
+    static ToggleTileSelected(position: BoardPosition, tile: BoardTileData, chessBoard: BoardTileData[][]):BoardTileData[][]
+    {
+        const tileState:BoardTileState = (tile.tileState === BoardTileState.Active) ? BoardTileState.None : BoardTileState.Active;
+        chessBoard = ChessController.ClearBoard(chessBoard);
+    
+        if (tileState === BoardTileState.Active)
+        {
+            ChessData.SetSelectedPiece(ChessData.GetTileAtPosition(position));
+    
+            for (let i = 0; i < tile.pieceOnTile.viableMoves.length; i++) 
+            {
+                const move = tile.pieceOnTile.viableMoves[i];
+                chessBoard[move.newPosition.x][move.newPosition.y].tileState = BoardTileState.Moveable;
+            }
+        }
+    
+        chessBoard[position.x][position.y].tileState = tileState;
+    
+        return chessBoard;
+    }
+    
+    static GetKing(colour: ChessColour, chessBoard: BoardTileData[][])
+    {
+        for (let x = 0; x < 8; x++) {
+            for (let y = 0; y < 8; y++)
+            {
+                const piece = chessBoard[x][y].pieceOnTile;
+                if (piece.type === ChessPieceType.King)
+                {
+                    if (piece.colour === colour) return chessBoard[x][y];
                 }
             }
         }
     }
-
-    tileToMoveTo.pieceOnTile.PieceMoved();
-
-    return [chessBoard, displayPromotion];
-}
-
-export function Checkmate(victor: ChessColour, EndGame: (victor: ChessColour) => void)
-{
-    EndGame(victor);
-}
-
-export function ClearBoard(chessBoard: TileInfo[][], endTurn: boolean, currentTurn: ChessColour):TileInfo[][]
-{
-    for (let x = 0; x < 8; x++) {
-        for (let y = 0; y < 8; y++)
+    
+    static UpdateGameState()
+    {
+        const chessBoard = ChessData.GetChessBoard();
+        const whiteKing = ChessController.GetKing(ChessColour.White, chessBoard);
+        const whiteInCheck = whiteKing ? (whiteKing.GetThreat(ChessColour.Black) ? true : false) : false;
+        const blackKing = ChessController.GetKing(ChessColour.Black, chessBoard);
+        const blackInCheck = blackKing ? (blackKing.GetThreat(ChessColour.White) ? true : false) : false;
+        const checkmateStatus = ChessController.CheckmateStatus();
+    
+        ChessData.SetGameState(new GameState(whiteInCheck, blackInCheck, checkmateStatus));
+    }
+    
+    static CheckmateStatus():ChessColour | null
+    {
+        return null;
+    }
+    
+    static Checkmate(victor: ChessColour, EndGame: (victor: ChessColour) => void)
+    {
+        EndGame(victor);
+    }
+    
+    static HandleChoosePromotion(promotionType: ChessPieceType, Update:() => void)
+    {
+        const selectedPiece = ChessData.GetSelectedPiece();
+        if (selectedPiece)
         {
-            chessBoard[x][y].SetTileState(TileState.None);
-
-            if (endTurn && chessBoard[x][y].pieceOnTile)
+            const promotionTile = ChessData.GetTileAtPosition(selectedPiece.position);
+            promotionTile.pieceOnTile.type = promotionType;
+        }
+        ChessController.EndTurn();
+        Update();
+    }
+    
+    static ClearBoard(chessBoard: BoardTileData[][], endTurn?: boolean):BoardTileData[][]
+    {
+        for (let x = 0; x < 8; x++) {
+            for (let y = 0; y < 8; y++)
             {
-                const pieceOnTile = chessBoard[x][y].pieceOnTile;
-                if (pieceOnTile.pieceColour !== currentTurn)
+                const tile = chessBoard[x][y];
+                tile.tileState = BoardTileState.None;
+    
+                if (endTurn && tile.pieceOnTile.type === ChessPieceType.Pawn)
                 {
-                    pieceOnTile.movedTwoSpacesLastTurn = false;
+                    const pieceOnTile = tile.pieceOnTile;
+                    if (pieceOnTile.colour === ChessData.GetCurrentTurn())
+                    {
+                        pieceOnTile.hasPawnMovedTwoSpacesLastTurn = false;
+                    }
                 }
             }
         }
+        
+        return chessBoard;
     }
-    return chessBoard;
 }

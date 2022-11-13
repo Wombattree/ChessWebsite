@@ -1,15 +1,15 @@
 import ChessPiece from "../../chess/ChessPiece";
 import GetPieceImage from "../../chess/GetPieceImage";
-import { ChessColour, ChessPieceName } from "../../utilities/enums";
+import { ChessColour, ChessPieceType } from "../../utilities/enums";
 
 interface Props
 {
     topOffset: number, 
     leftOffset: number, 
     tileSize: number, 
-    pieceName: ChessPieceName, 
+    pieceName: ChessPieceType, 
     pieceColour: ChessColour, 
-    ChoosePromotion: (pieceChosen: ChessPieceName) => void
+    ChoosePromotion: (pieceChosen: ChessPieceType) => void
 }
 
 export default function DisplayPromotionImage(props: Props) 

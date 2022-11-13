@@ -1,22 +1,21 @@
 import React from 'react';
-import TileInfo from '../../chess/TileInfo';
-import { ChessColour, ChessPieceName, TileState } from "../../utilities/enums";
+import { ChessColour, ChessPieceType, BoardTileState } from "../../utilities/enums";
 import GetPieceImage from '../../chess/GetPieceImage';
 import './style.css';
-import BoardPosition from '../../chess/BoardPosition';
+import { BoardPosition, BoardTileData } from '../../chess/BoardClasses';
 
 const whiteTileColour = "rgb(231 220 220)";
 const blackTileColour = "rgb(191 98 98)";
 
 interface Props
 {
-	tileInfo: TileInfo,
+	boardTileData: BoardTileData,
     tileSize: number,
     boardCorner: BoardPosition,
     LeftClickedOnTile: (position: BoardPosition) => void,
-    HoveredOnTile: (position: BoardPosition, mouseEnter:boolean) => void,
-    showThreatenedTiles: boolean,
-    turn: ChessColour,
+    HoveredOnTile: (position: BoardPosition, mouseEnter: boolean) => void,
+    debugMode: boolean,
+    currentTurn: ChessColour,
 }
 
 function GetTileColour(xPosition:number, yPosition:number):string
@@ -33,22 +32,32 @@ function GetPosition(position:number, cornerPosition:number, tileSize:number):st
     return `${cornerPosition + position * tileSize}px`
 }
 
-export const BoardTile: React.FC<Props> = (props: Props) =>
+function ShowWhiteThreatenedTiles(props: Props): boolean
+{
+    if (props.debugMode && props.boardTileData.GetThreat(ChessColour.White) && props.currentTurn === ChessColour.White) return true;
+    else return false;
+}
+
+function ShowBlackThreatenedTiles(props: Props): boolean
+{
+    if (props.debugMode && props.boardTileData.GetThreat(ChessColour.Black) && props.currentTurn === ChessColour.Black) return true;
+    else return false;
+}
+
+export default function BoardTile (props: Props)
 {
     function TileClicked()
     {
-        //console.log(`${props.tileInfo.xPosition}, ${props.tileInfo.yPosition} tile clicked`);
-
-        props.LeftClickedOnTile(new BoardPosition(props.tileInfo.position.x, props.tileInfo.position.y));
+        props.LeftClickedOnTile(new BoardPosition(props.boardTileData.position.x, props.boardTileData.position.y));
     }
 
-    // function ToggleTileHover(mouseEnter:boolean)
-    // {
-    //     props.HoveredOnTile(new BoardPosition(props.tileInfo.position.x, props.tileInfo.position.y), mouseEnter);
-    // }
+    function ToggleTileHover(mouseEnter:boolean)
+    {
+        if (props.debugMode) props.HoveredOnTile(props.boardTileData.position, mouseEnter);
+    }
 
-    const topOffset = GetPosition(props.tileInfo.position.x, props.boardCorner.x, props.tileSize);
-    const leftOffset = GetPosition(props.tileInfo.position.y, props.boardCorner.y, props.tileSize);
+    const topOffset = GetPosition(props.boardTileData.position.x, props.boardCorner.x, props.tileSize);
+    const leftOffset = GetPosition(props.boardTileData.position.y, props.boardCorner.y, props.tileSize);
 
     const tileStyle = 
     {
@@ -56,7 +65,7 @@ export const BoardTile: React.FC<Props> = (props: Props) =>
         left: leftOffset,
         width: props.tileSize,
         height: props.tileSize,
-        backgroundColor: GetTileColour(props.tileInfo.position.x, props.tileInfo.position.y),
+        backgroundColor: GetTileColour(props.boardTileData.position.x, props.boardTileData.position.y),
     }
 
     const activeStyle = 
@@ -70,34 +79,34 @@ export const BoardTile: React.FC<Props> = (props: Props) =>
 	return (
 		<div className="boardTile" style={tileStyle} 
             onClick={() => TileClicked()} 
-            // onMouseEnter={() => ToggleTileHover(true)}
-            //onMouseLeave={() => ToggleTileHover(false)}
+            onMouseEnter={() => ToggleTileHover(true)}
+            onMouseLeave={() => ToggleTileHover(false)}
             >
 
-            <div className="boardTileText">{`${props.tileInfo.position.x}, ${props.tileInfo.position.y}`}</div>
+            <div className="boardTileText">{`${props.boardTileData.position.x}, ${props.boardTileData.position.y}`}</div>
 
-            { props.tileInfo.tileState === TileState.Active &&
+            { props.boardTileData.tileState === BoardTileState.Active &&
                 <div className="boardTile boardTileActive" style={activeStyle}></div>
             }
 
-            { props.tileInfo.tileState === TileState.Hovered &&
+            { props.boardTileData.tileState === BoardTileState.Hovered &&
                 <div className="boardTile boardTileHovered" style={activeStyle}></div>
             }
 
-            { props.tileInfo.tileState === TileState.Moveable &&
+            { props.boardTileData.tileState === BoardTileState.Moveable &&
                 <div className="boardTile boardTileMovable" style={activeStyle}></div>
             }
 
-            { (props.showThreatenedTiles && props.tileInfo.threatenedByWhite && props.turn === ChessColour.White) &&
-                <div className="boardTile boardTileThreatened" style={activeStyle}></div>
+            { ShowWhiteThreatenedTiles(props) &&
+                <div className="boardTile boardTileThreatenedWhite" style={activeStyle}></div>
             }
 
-            { (props.showThreatenedTiles && props.tileInfo.threatenedByBlack && props.turn === ChessColour.Black) &&
-                <div className="boardTile boardTileThreatened" style={activeStyle}></div>
+            { ShowBlackThreatenedTiles(props) &&
+                <div className="boardTile boardTileThreatenedBlack" style={activeStyle}></div>
             }
             
-            { props.tileInfo.pieceOnTile.pieceName !== ChessPieceName.None &&
-                <img className="boardTileImage" src={GetPieceImage(props.tileInfo.pieceOnTile)} alt={"Chess Piece"}></img>
+            { props.boardTileData.pieceOnTile.type !== ChessPieceType.None &&
+                <img className="boardTileImage" src={GetPieceImage(props.boardTileData.pieceOnTile)} alt={"Chess Piece"}></img>
             }
 		</div>
 	);

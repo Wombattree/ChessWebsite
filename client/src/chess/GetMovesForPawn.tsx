@@ -1,70 +1,94 @@
-import { IsMoveOnBoard, GetTileNeutrality, MovementResult, CombinePositionWithOffset } from "./GetMovesForPiece";
-import { ChessColour, TileNeutrality } from "../utilities/enums";
-import BoardPosition from "./BoardPosition";
-import TileInfo from "./TileInfo";
-import * as offset from "./MovementOffsets";
+import { IsMoveOnBoard, GetTileNeutrality, CombinePositionWithOffset, WouldMovePutYourKingInCheck } from "./GetMovesForPiece";
+import { ChessColour, BoardTileNeutrality } from "../utilities/enums";
+import MovementOffsets from "./MovementOffsets";
+import { BoardPosition, BoardTileData } from "./BoardClasses";
+import { MovementInformation } from "./MovementClasses";
 
-function TryMoveForward(currentPosition: BoardPosition, movementOffset: BoardPosition, pieceColour: ChessColour, spacesToMove: number, chessBoard:TileInfo[][]):MovementResult | null
+function TryMoveForward(currentPosition: BoardPosition, movementOffset: BoardPosition, pieceColour: ChessColour, spacesToMove: number, chessBoard:BoardTileData[][]):MovementInformation | null
 {
     const positionToMoveTo: BoardPosition = new BoardPosition(currentPosition.x + movementOffset.x * spacesToMove, currentPosition.y);
     if (IsMoveOnBoard(positionToMoveTo) === false) return null;
 
-    const tileToMoveTo: TileInfo = chessBoard[positionToMoveTo.x][positionToMoveTo.y];
-    if (GetTileNeutrality(tileToMoveTo, pieceColour) !== TileNeutrality.Empty) return null;
-    return new MovementResult(positionToMoveTo, false);
+    const tileToMoveTo: BoardTileData = chessBoard[positionToMoveTo.x][positionToMoveTo.y];
+    if (GetTileNeutrality(tileToMoveTo, pieceColour) !== BoardTileNeutrality.Empty) return null;
+    return new MovementInformation(positionToMoveTo, false);
 }
 
-function TryMoveDiagonal(currentPosition: BoardPosition, movementOffsetDiagonal: BoardPosition, movementOffsetSide: BoardPosition, pieceColour: ChessColour, chessBoard:TileInfo[][]):MovementResult | null
+function TryMoveDiagonal(currentPosition: BoardPosition, movementOffsetDiagonal: BoardPosition, movementOffsetSide: BoardPosition, pieceColour: ChessColour, chessBoard:BoardTileData[][]):MovementInformation | null
 {
     const positionToMoveToDiagonal: BoardPosition = CombinePositionWithOffset(currentPosition, movementOffsetDiagonal);
-    const tileToMoveTo: TileInfo = chessBoard[positionToMoveToDiagonal.x][positionToMoveToDiagonal.y];
+    const tileToMoveTo: BoardTileData = chessBoard[positionToMoveToDiagonal.x][positionToMoveToDiagonal.y];
 
     if (IsMoveOnBoard(positionToMoveToDiagonal) === false) return null;
 
     const tileNeutrality = GetTileNeutrality(tileToMoveTo, pieceColour);
-    if (tileNeutrality === TileNeutrality.Friendly) return null;
-    if (tileNeutrality !== TileNeutrality.Hostile)
+    if (tileNeutrality === BoardTileNeutrality.Friendly) return null;
+    if (tileNeutrality !== BoardTileNeutrality.Hostile)
     {
         //En passant
         const positionToMoveToSide: BoardPosition = CombinePositionWithOffset(currentPosition, movementOffsetSide);
-        const tileToSide: TileInfo = chessBoard[positionToMoveToSide.x][positionToMoveToSide.y];
-        if (GetTileNeutrality(tileToSide, pieceColour) !== TileNeutrality.Hostile) return null;
-        if (tileToSide.pieceOnTile.movedTwoSpacesLastTurn === false) return null;
-        else return new MovementResult(positionToMoveToDiagonal, true);
+        const tileToSide: BoardTileData = chessBoard[positionToMoveToSide.x][positionToMoveToSide.y];
+
+        if (GetTileNeutrality(tileToSide, pieceColour) !== BoardTileNeutrality.Hostile) return null;
+        if (tileToSide.pieceOnTile.hasPawnMovedTwoSpacesLastTurn === false) return null;
+        
+        const movementInformation = new MovementInformation(positionToMoveToDiagonal, true);
+        movementInformation.MoveIsEnPassant(tileToSide.position);
+
+        return movementInformation;
     }
-    return new MovementResult(positionToMoveToDiagonal, true);
+    return new MovementInformation(positionToMoveToDiagonal, true);
 }
 
-export default function GetMovesForPawn(pieceColour: ChessColour, tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
+export default function GetMovesForPawn(pieceColour: ChessColour, tile:BoardTileData, chessBoard:BoardTileData[][]):MovementInformation[]
 {
     const maxDistanceForward: number = tile.pieceOnTile.hasMoved ? 1 : 2;
-    const viableMoves: BoardPosition[] = [];
+    const viableMoves: MovementInformation[] = [];
         
     for (let i = 1; i <= maxDistanceForward; i++)
     {
-        let movementResult = TryMoveForward(tile.position, (pieceColour === ChessColour.White) ? offset.up : offset.down, pieceColour, i, chessBoard);
+        let movementResult = TryMoveForward(tile.position, (pieceColour === ChessColour.White) ? MovementOffsets.up : MovementOffsets.down, pieceColour, i, chessBoard);
         if (movementResult)
         {
-            viableMoves.push(new BoardPosition(movementResult.newPosition.x, movementResult.newPosition.y));
-            //chessBoard[movementResult.newPosition.x][movementResult.newPosition.y].SetTileState(TileState.Moveable);
-            if (movementResult.isEnemyPieceOnTile) break;
+            if (i === 2) movementResult.MoveIsPawnMovingTwoSpaces();
+
+            movementResult = TryAddMove(pieceColour, tile, movementResult);
+            if (movementResult) 
+            {
+                viableMoves.push(movementResult);
+                if (movementResult.isEnemyPieceOnTile) break;
+            }
+            else break;
         }
         else break;
     }
 
-    let movementResultDiagonalLeft = TryMoveDiagonal(tile.position, (pieceColour === ChessColour.White) ? offset.upLeft : offset.downLeft, offset.left, pieceColour, chessBoard);
-    if (movementResultDiagonalLeft)
+    let movementResultDiagonalLeft = TryMoveDiagonal(tile.position, (pieceColour === ChessColour.White) ? MovementOffsets.upLeft : MovementOffsets.downLeft, MovementOffsets.left, pieceColour, chessBoard);
+    if (movementResultDiagonalLeft) 
     {
-        viableMoves.push(new BoardPosition(movementResultDiagonalLeft.newPosition.x, movementResultDiagonalLeft.newPosition.y));
-        //chessBoard[movementResultDiagonalLeft.newPosition.x][movementResultDiagonalLeft.newPosition.y].SetTileState(TileState.Moveable);
+        movementResultDiagonalLeft = TryAddMove(pieceColour, tile, movementResultDiagonalLeft);
+        if (movementResultDiagonalLeft) viableMoves.push(movementResultDiagonalLeft);
     }
 
-    let movementResultDiagonalRight = TryMoveDiagonal(tile.position, (pieceColour === ChessColour.White) ? offset.upRight : offset.downRight, offset.right, pieceColour, chessBoard);
-    if (movementResultDiagonalRight)
+    let movementResultDiagonalRight = TryMoveDiagonal(tile.position, (pieceColour === ChessColour.White) ? MovementOffsets.upRight : MovementOffsets.downRight, MovementOffsets.right, pieceColour, chessBoard);
+    if (movementResultDiagonalRight) 
     {
-        viableMoves.push(new BoardPosition(movementResultDiagonalRight.newPosition.x, movementResultDiagonalRight.newPosition.y));
-        //chessBoard[movementResultDiagonalRight.newPosition.x][movementResultDiagonalRight.newPosition.y].SetTileState(TileState.Moveable);
+        movementResultDiagonalRight = TryAddMove(pieceColour, tile, movementResultDiagonalRight);
+        if (movementResultDiagonalRight) viableMoves.push(movementResultDiagonalRight);
     }
 
     return viableMoves;
+}
+
+function TryAddMove(pieceColour: ChessColour, tile:BoardTileData, move: MovementInformation): MovementInformation | null
+{
+    if (ShouldPawnBePromoted(pieceColour, move.newPosition)) move.MoveIsPromotion();
+    if (WouldMovePutYourKingInCheck(tile, move)) return null;
+    return move;
+}
+
+function ShouldPawnBePromoted(pieceColour: ChessColour, tileToMoveTo:BoardPosition): boolean
+{
+    if ((pieceColour === ChessColour.White && tileToMoveTo.x === 0) || (pieceColour === ChessColour.Black && tileToMoveTo.x === 7)) return true;
+    else return false;
 }

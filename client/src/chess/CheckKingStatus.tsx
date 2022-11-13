@@ -1,9 +1,9 @@
 import { ChessColour, KingStatus } from "../utilities/enums";
-import TileInfo from "./TileInfo";
+import { BoardTileData } from "./BoardClasses";
 
-export default function CheckKingStatus(kingColour: ChessColour, tileToCheck:TileInfo):KingStatus
+export function CheckKingStatus(kingColour: ChessColour, tileToCheck:BoardTileData):KingStatus
 {
-    if (kingColour === ChessColour.White && tileToCheck.threatenedByBlack) return KingStatus.Check;
-    if (kingColour === ChessColour.Black && tileToCheck.threatenedByWhite) return KingStatus.Check;
+    if (kingColour === ChessColour.White && tileToCheck.GetThreat(ChessColour.Black)) return KingStatus.Check;
+    if (kingColour === ChessColour.Black && tileToCheck.GetThreat(ChessColour.White)) return KingStatus.Check;
     return KingStatus.Okay;
 }

@@ -1,21 +1,13 @@
-import { ChessColour, ChessPieceName, TileNeutrality } from "../utilities/enums";
-import { GetMovesForRook, GetMovesForBishop, GetMovesForQueen, GetMovesForKing } from "./GetMovesForStandard";
-import GetMovesForKnight from "./GetMovesForKnight";
+import { ChessColour, ChessPieceType, BoardTileNeutrality, KingStatus } from "../utilities/enums";
+import { GetMovesForRook, GetMovesForBishop, GetMovesForQueen, GetMovesForKing, GetMovesForKnight } from "./GetMovesForStandard";
 import GetMovesForPawn from "./GetMovesForPawn";
-import BoardPosition from "./BoardPosition";
-import TileInfo from "./TileInfo";
-
-export class MovementResult
-{
-    newPosition: BoardPosition;
-    isEnemyPieceOnTile: boolean;
-
-    constructor(newPosition: BoardPosition, isEnemyPieceOnTile: boolean)
-    {
-        this.newPosition = newPosition;
-        this.isEnemyPieceOnTile = isEnemyPieceOnTile;
-    }
-}
+import { BoardPosition, BoardTileData } from "./BoardClasses";
+import { ChessData } from "./InformationClasses";
+import { MovementInformation } from "./MovementClasses";
+import ChessPiece from "./ChessPiece";
+import { ChessMovementController } from "./ChessMovementController";
+import { ChessController } from "./ChessController";
+import { CheckKingStatus } from "./CheckKingStatus";
 
 export function IsMoveOnBoard(movePosition: BoardPosition):boolean
 {
@@ -24,12 +16,12 @@ export function IsMoveOnBoard(movePosition: BoardPosition):boolean
     return true;
 }
 
-export function GetTileNeutrality(tile:TileInfo, pieceColour: ChessColour):TileNeutrality
+export function GetTileNeutrality(tile:BoardTileData, pieceColour: ChessColour):BoardTileNeutrality
 {
-    if (tile.pieceOnTile.pieceName === ChessPieceName.None) return TileNeutrality.Empty;
+    if (tile.pieceOnTile.type === ChessPieceType.None) return BoardTileNeutrality.Empty;
 
-    else if (pieceColour !== tile.pieceOnTile.pieceColour) return TileNeutrality.Hostile;
-    else return TileNeutrality.Friendly;
+    else if (pieceColour !== tile.pieceOnTile.colour) return BoardTileNeutrality.Hostile;
+    else return BoardTileNeutrality.Friendly;
 }
 
 export function CombinePositionWithOffset(initialPosition:BoardPosition, offset: BoardPosition):BoardPosition
@@ -37,49 +29,100 @@ export function CombinePositionWithOffset(initialPosition:BoardPosition, offset:
     return new BoardPosition(initialPosition.x + offset.x, initialPosition.y + offset.y);
 }
 
-export function SetThreatenedTiles(colour: ChessColour, viableMoves: BoardPosition[], chessBoard:TileInfo[][]):TileInfo[][]
+export function SetThreatenedTiles(piece: ChessPiece):BoardTileData[][]
 {
+    const chessBoard:BoardTileData[][] = ChessData.GetChessBoard();
+    const pieceColour: ChessColour = piece.colour;
+    const viableMoves: MovementInformation[] = piece.viableMoves;
     for (let i = 0; i < viableMoves.length; i++) 
     {
-        chessBoard[viableMoves[i].x][viableMoves[i].y].SetThreat(colour);
+        if (viableMoves[i].GetIsMoveCastling() === false)
+        {
+            const movePosition: BoardPosition = viableMoves[i].newPosition;
+            chessBoard[movePosition.x][movePosition.y].SetThreat(pieceColour);
+        }
     }
     return chessBoard;
 }
 
-export default function GetMovesForPiece(tile:TileInfo, chessBoard:TileInfo[][]):BoardPosition[]
+export function WouldMovePutYourKingInCheck(tileToMoveFrom: BoardTileData, moveToMake: MovementInformation): boolean
 {
-    const pieceName: ChessPieceName = tile.pieceOnTile.pieceName;
-    const pieceColour: ChessColour = tile.pieceOnTile.pieceColour;
-    let viableMoves: BoardPosition[] = [];
+    let hypotheticalBoard = DeepCopyBoard(ChessData.GetChessBoard());//[...ChessData.GetChessBoard()];
+    const tileToMoveTo = hypotheticalBoard[moveToMake.newPosition.x][moveToMake.newPosition.y];
+    
+    [hypotheticalBoard] = ChessMovementController.MovePiece(tileToMoveFrom.pieceOnTile, tileToMoveFrom, tileToMoveTo, hypotheticalBoard);
 
-    switch(pieceName)
+    const king: BoardTileData | undefined = tileToMoveFrom.pieceOnTile.colour === ChessColour.White ? ChessController.GetKing(ChessColour.White, hypotheticalBoard) : ChessController.GetKing(ChessColour.Black, hypotheticalBoard);
+
+    if (king)
     {
-        case ChessPieceName.Pawn:
+        const kingStatus = CheckKingStatus(king.pieceOnTile.colour, king);
+        if (kingStatus === KingStatus.Check) return true;
+        else return false;
+    }
+
+    return true;
+}
+
+function DeepCopyBoard(originalBoard: BoardTileData[][]): BoardTileData[][]
+{
+    const chessBoardCopy: BoardTileData[][] = [[],[],[],[],[],[],[],[]];
+
+    for (let x = 0; x < 8; x++) {
+        for (let y = 0; y < 8; y++) 
+        {
+            const boardTileOriginal = originalBoard[x][y];
+            const boardTileCopy = new BoardTileData(new BoardPosition(x, y));
+
+            const pieceOnTileOriginal = boardTileOriginal.pieceOnTile;
+            const pieceOnTileCopy = new ChessPiece(pieceOnTileOriginal.type, pieceOnTileOriginal.colour);
+            pieceOnTileCopy.hasMoved = pieceOnTileOriginal.hasMoved;
+            pieceOnTileCopy.hasPawnMovedTwoSpacesLastTurn = pieceOnTileOriginal.hasPawnMovedTwoSpacesLastTurn;
+
+            boardTileCopy.pieceOnTile = pieceOnTileCopy;
+
+            chessBoardCopy[x][y] = boardTileCopy;
+        }
+    }
+
+    return chessBoardCopy;
+}
+
+export default function GetMovesForPiece(tile:BoardTileData):MovementInformation[]
+{
+    const chessBoard: BoardTileData[][] = ChessData.GetChessBoard();
+    const pieceType: ChessPieceType = tile.pieceOnTile.type;
+    const pieceColour: ChessColour = tile.pieceOnTile.colour;
+    let viableMoves: MovementInformation[] = [];
+
+    switch(pieceType)
+    {
+        case ChessPieceType.Pawn:
             viableMoves = GetMovesForPawn(pieceColour, tile, chessBoard);
             break;
 
-        case ChessPieceName.Knight:
+        case ChessPieceType.Knight:
             viableMoves = GetMovesForKnight(pieceColour, tile, chessBoard);
             break;
 
-        case ChessPieceName.Rook:
+        case ChessPieceType.Rook:
             viableMoves = GetMovesForRook(pieceColour, tile, chessBoard);
             break;
 
-        case ChessPieceName.Bishop:
+        case ChessPieceType.Bishop:
             viableMoves = GetMovesForBishop(pieceColour, tile, chessBoard);
             break;
 
-        case ChessPieceName.Queen:
+        case ChessPieceType.Queen:
             viableMoves = GetMovesForQueen(pieceColour, tile, chessBoard);
             break;
 
-        case ChessPieceName.King:
+        case ChessPieceType.King:
             viableMoves = GetMovesForKing(pieceColour, tile, chessBoard);
             break;
 
         default:
-            console.log(`Couldn't find piece! ${tile.pieceOnTile.pieceName}`);
+            console.log(`Couldn't find piece! ${tile.pieceOnTile.type}`);
             break;
     }
 

@@ -41,7 +41,12 @@
     background-color: rgba(77, 213, 237, 0.65);
 }
 
-.boardTileThreatened
+.boardTileThreatenedWhite
 {
     background-color: rgba(237, 77, 208, 0.5);
+}
+
+.boardTileThreatenedBlack
+{
+    background-color: rgba(237, 221, 77, 0.5);
 }

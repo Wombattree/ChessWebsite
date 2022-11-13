@@ -1,4 +1,4 @@
-import { ChessPieceName, ChessColour } from "../utilities/enums";
+import { ChessPieceType, ChessColour } from "../utilities/enums";
 import ChessPiece from "./ChessPiece";
 
 import blackPawn from "./assets/blackPawn.png";
@@ -16,30 +16,32 @@ import whiteKing from "./assets/whiteKing.png";
 
 export default function GetPieceImage(chessPiece:ChessPiece)
 {
-    switch(chessPiece.pieceName)
+    const type = chessPiece.type;
+    const colour = chessPiece.colour;
+    switch(type)
     {
-        case ChessPieceName.Pawn:
-            if (chessPiece.pieceColour === ChessColour.White) return whitePawn;
+        case ChessPieceType.Pawn:
+            if (colour === ChessColour.White) return whitePawn;
             else return blackPawn;
 
-        case ChessPieceName.Knight:
-            if (chessPiece.pieceColour === ChessColour.White) return whiteKnight;
+        case ChessPieceType.Knight:
+            if (colour === ChessColour.White) return whiteKnight;
             else return blackKnight;
 
-        case ChessPieceName.Bishop:
-            if (chessPiece.pieceColour === ChessColour.White) return whiteBishop;
+        case ChessPieceType.Bishop:
+            if (colour === ChessColour.White) return whiteBishop;
             else return blackBishop;
 
-        case ChessPieceName.Rook:
-            if (chessPiece.pieceColour === ChessColour.White) return whiteRook;
+        case ChessPieceType.Rook:
+            if (colour === ChessColour.White) return whiteRook;
             else return blackRook;
 
-        case ChessPieceName.Queen:
-            if (chessPiece.pieceColour === ChessColour.White) return whiteQueen;
+        case ChessPieceType.Queen:
+            if (colour === ChessColour.White) return whiteQueen;
             else return blackQueen;
 
-        case ChessPieceName.King:
-            if (chessPiece.pieceColour === ChessColour.White) return whiteKing;
+        case ChessPieceType.King:
+            if (colour === ChessColour.White) return whiteKing;
             else return blackKing;
         default:
             console.log("No image found");

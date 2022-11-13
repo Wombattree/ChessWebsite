@@ -1,6 +1,6 @@
 import React from 'react';
-import BoardPosition from '../../chess/BoardPosition';
-import { ChessColour, ChessPieceName } from "../../utilities/enums";
+import { BoardPosition } from '../../chess/BoardClasses';
+import { ChessColour, ChessPieceType } from "../../utilities/enums";
 import DisplayPromotionImage from '../DisplayPromotionImage/DisplayPromotionImage';
 import './style.css';
 
@@ -9,15 +9,15 @@ interface Props
 	currentTurn: ChessColour,
     tileSize: number,
     boardCorner: BoardPosition,
-    ChoosePromotion: (pieceChosen: ChessPieceName) => void,
+    ChoosePromotion: (pieceChosen: ChessPieceType) => void,
 }
 
 class PromotionImage
 {
     boardPosition: number;
-    piece: ChessPieceName;
+    piece: ChessPieceType;
 
-    constructor(boardPosition: number, piece: ChessPieceName)
+    constructor(boardPosition: number, piece: ChessPieceType)
     {
         this.boardPosition = boardPosition;
         this.piece = piece;
@@ -26,10 +26,10 @@ class PromotionImage
 
 const promotionImages: PromotionImage[] = 
 [
-    new PromotionImage(2, ChessPieceName.Queen),
-    new PromotionImage(3, ChessPieceName.Rook),
-    new PromotionImage(4, ChessPieceName.Bishop),
-    new PromotionImage(5, ChessPieceName.Knight),
+    new PromotionImage(2, ChessPieceType.Queen),
+    new PromotionImage(3, ChessPieceType.Rook),
+    new PromotionImage(4, ChessPieceType.Bishop),
+    new PromotionImage(5, ChessPieceType.Knight),
 ]
 
 function GetTopPosition(cornerPosition:number, tileSize:number)

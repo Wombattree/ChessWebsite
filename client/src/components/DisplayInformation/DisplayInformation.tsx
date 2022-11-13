@@ -1,7 +1,7 @@
 import React from 'react';
-import BoardPosition from '../../chess/BoardPosition';
+import { BoardPosition } from '../../chess/BoardClasses';
+import { GameState } from '../../chess/InformationClasses';
 import { ChessColour } from '../../utilities/enums';
-import { GameState } from '../Chess/Chess';
 import './style.css';
 
 interface Props

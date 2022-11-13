@@ -1,17 +1,17 @@
-import { ChessPieceName, ChessColour } from "../utilities/enums";
+import { ChessPieceType, ChessColour } from "../utilities/enums";
 import ChessPiece from "./ChessPiece";
 
-function GetPieceFromLetter(letter:string):ChessPieceName
+function GetPieceFromLetter(letter:string):ChessPieceType
 {
     switch(letter)
     {
-        case "p": return ChessPieceName.Pawn;
-        case "n": return ChessPieceName.Knight;
-        case "r": return ChessPieceName.Rook;
-        case "b": return ChessPieceName.Bishop;
-        case "k": return ChessPieceName.King;
-        case "q": return ChessPieceName.Queen;
-        default: console.log(`Piece not found! "${letter}"`); return ChessPieceName.None;
+        case "p": return ChessPieceType.Pawn;
+        case "n": return ChessPieceType.Knight;
+        case "r": return ChessPieceType.Rook;
+        case "b": return ChessPieceType.Bishop;
+        case "k": return ChessPieceType.King;
+        case "q": return ChessPieceType.Queen;
+        default: console.log(`Piece not found! "${letter}"`); return ChessPieceType.None;
     }
 }
 
@@ -42,7 +42,7 @@ export default function LoadPositionFromFen(fen:string):ChessPiece[][]
             else
             {
                 const pieceColour:ChessColour = (isUpperCaseRegex.test(character) ? ChessColour.White : ChessColour.Black);
-                const pieceName:ChessPieceName = (GetPieceFromLetter(character.toLowerCase()))
+                const pieceName:ChessPieceType = (GetPieceFromLetter(character.toLowerCase()))
 
                 piecePositions[yPosition][xPosition] = new ChessPiece(pieceName, pieceColour);
                 xPosition++;
