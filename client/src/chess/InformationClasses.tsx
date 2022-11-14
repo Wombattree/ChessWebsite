@@ -23,23 +23,30 @@ export class ChessData
     private static chessBoard: BoardTileData[][] = this.InitialiseChessBoard();
     private static selectedPiece: BoardTileData | null = null;
     private static currentGameState: GameState = new GameState(false, false, null);
-    private static currentTurn: ChessColour = ChessColour.White;
+    //The turn gets started as black since the currentTurn is toggled on each turn start, thus the first turn will be white
+    private static currentTurn: ChessColour = ChessColour.Black;
+    private static playerTurn: ChessColour = ChessColour.None;
+    private static computerTurn: ChessColour = ChessColour.None;
     private static displayPromotion: boolean = false;
 
-    static GetChessBoard():BoardTileData[][] { return ChessData.chessBoard; }
-    static SetChessBoard(updatedChessBoard: BoardTileData[][]) { ChessData.chessBoard = updatedChessBoard; }
+    static GetChessBoard():BoardTileData[][] { return this.chessBoard; }
+    static SetChessBoard(updatedChessBoard: BoardTileData[][]) { this.chessBoard = updatedChessBoard; }
 
-    static GetTileAtPosition(position: BoardPosition):BoardTileData { return ChessData.chessBoard[position.x][position.y]; }
+    static GetTileAtPosition(position: BoardPosition):BoardTileData { return this.chessBoard[position.x][position.y]; }
 
-    static GetSelectedPiece():BoardTileData | null { return ChessData.selectedPiece; }
-    static SetSelectedPiece(updatedSelectedPiece: BoardTileData | null) { ChessData.selectedPiece = updatedSelectedPiece; }
+    static GetSelectedPiece():BoardTileData | null { return this.selectedPiece; }
+    static SetSelectedPiece(updatedSelectedPiece: BoardTileData | null) { this.selectedPiece = updatedSelectedPiece; }
 
-    static GetGameState():GameState { return ChessData.currentGameState; }
-    static SetGameState(updatedGameState: GameState) { ChessData.currentGameState = updatedGameState; }
+    static GetGameState():GameState { return this.currentGameState; }
+    static SetGameState(updatedGameState: GameState) { this.currentGameState = updatedGameState; }
 
-    static GetCurrentTurn():ChessColour { return ChessData.currentTurn; }
-    static SetCurrentTurn(updatedCurrentTurn: ChessColour) { ChessData.currentTurn = updatedCurrentTurn; }
-    static ToggleCurrentTurn() { ChessData.currentTurn = (ChessData.currentTurn === ChessColour.White) ? ChessColour.Black : ChessColour.White; }
+    static GetCurrentTurn():ChessColour { return this.currentTurn; }
+    static SetCurrentTurn(updatedCurrentTurn: ChessColour) { this.currentTurn = updatedCurrentTurn; }
+    static ToggleCurrentTurn() { this.currentTurn = (this.currentTurn === ChessColour.White) ? ChessColour.Black : ChessColour.White; }
+
+    static GetPlayerTurn():ChessColour { return this.playerTurn; }
+    static GetComputerTurn():ChessColour { return this.computerTurn; }
+    static IsItPlayerTurn(): boolean { if (this.playerTurn === this.currentTurn) return true; else return false;}
 
     static GetDisplayPromotion():boolean { return this.displayPromotion; }
     static SetDisplayPromotion(value: boolean) { this.displayPromotion = value; }
@@ -47,7 +54,7 @@ export class ChessData
     static InitialiseChessBoard():BoardTileData[][]
     {
         const chessBoard:BoardTileData[][] = [[],[],[],[],[],[],[],[]];
-        const chessBoardPieces:ChessPiece[][] = LoadPositionFromFen(ChessData.startingFEN);
+        const chessBoardPieces:ChessPiece[][] = LoadPositionFromFen(this.startingFEN);
 
         for (let x = 0; x < 8; x++) {
             for (let y = 0; y < 8; y++)
@@ -61,6 +68,21 @@ export class ChessData
         }
 
         return chessBoard;
+    }
+
+    static SetPlayerTurn()
+    {
+        const random = Math.round(Math.random());
+        if (random === 0) 
+        {
+            this.playerTurn = ChessColour.White;
+            this.computerTurn = ChessColour.Black;
+        }
+        else 
+        {
+            this.playerTurn = ChessColour.Black;
+            this.computerTurn = ChessColour.White;
+        }
     }
 
     static ClearThreat()

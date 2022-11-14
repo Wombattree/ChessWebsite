@@ -24,6 +24,7 @@ export default function Chess()
 {
 	const [chessBoard, SetChessBoard] = useState<BoardTileData[][]>(ChessData.InitialiseChessBoard());
 	const [currentTurn, SetCurrentTurn] = useState(ChessColour.White);
+	const [playerTurn, SetPlayerTurn] = useState(ChessColour.None);
 	const [displayPromotionChoices, SetDisplayPromotionChoices] = useState(false);
 	const [currentGameState, SetGameState] = useState(new GameState(false, false, null));
 
@@ -38,12 +39,13 @@ export default function Chess()
 		SetChessBoard(ChessData.GetChessBoard());
 		SetDisplayPromotionChoices(ChessData.GetDisplayPromotion());
 		SetCurrentTurn(ChessData.GetCurrentTurn());
+		SetPlayerTurn(ChessData.GetPlayerTurn());
 		SetGameState(ChessData.GetGameState());
 	}
 
 	function LeftClickedOnTile(position: BoardPosition)
 	{	
-		ChessController.HandleLeftClickOnTile(position, Update);
+		if (currentTurn === playerTurn && !currentGameState.victor) ChessController.HandleLeftClickOnTile(position, Update);
 	}
 
 	function ChoosePromotion(promotionType: ChessPieceType)
@@ -56,25 +58,6 @@ export default function Chess()
 		if (mouseEnter) SetDisplayDebugInfo(ChessData.GetTileAtPosition(position));
 		else SetDisplayDebugInfo(null);
 	}
-
-	// function HoveredOnTile(position: BoardPosition, mouseEnter:boolean)
-	// {	
-	// 	let chessBoardCopy = [...chessBoard];
-	// 	const tile = chessBoard[position.x][position.y];
-
-	// 	let tileState:BoardTileState = BoardTileState.None;
-
-	// 	if (tile.tileState !== BoardTileState.Active)
-	// 	{
-	// 		if (mouseEnter) tileState = BoardTileState.Hovered;
-	// 		else tileState = BoardTileState.None;
-	// 	}
-	// 	else tileState = BoardTileState.Active;
-		
-	// 	chessBoardCopy[position.x][position.y].SetTileState(tileState);
-
-	// 	UpdateChessBoard(chessBoardCopy);
-	// }
 	
 	const screenWidth:number = window.innerWidth;
 	const screenHeight:number = window.innerHeight;
@@ -87,6 +70,7 @@ export default function Chess()
 			<DisplayInformation
 				gameState={currentGameState}
 				currentTurn={currentTurn} 
+				playerTurn={playerTurn}
 				tileSize={boardTileSize} 
 				boardCorner={boardCornerPosition}
 			/>
@@ -107,21 +91,21 @@ export default function Chess()
 				))
           	))}
 
-			{ displayPromotionChoices &&
+			{ displayPromotionChoices ?
                 <DisplayPromotion
 					currentTurn={currentTurn} 
 					tileSize={boardTileSize} 
 					boardCorner={boardCornerPosition}
 					ChoosePromotion={ChoosePromotion}
-				/>
+				/> : null
             }
 
-			{ displayDebugInfo &&
+			{ displayDebugInfo ?
 				<DebugInformation
 					tile={displayDebugInfo}
 					tileSize={boardTileSize} 
 					boardCorner={boardCornerPosition}
-				/>
+				/> : null
 		}	
 		</div>
 	);

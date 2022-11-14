@@ -55,7 +55,7 @@ export default function DebugInformation(props: Props)
             <p>Threatened By White?: {(props.tile.GetThreat(ChessColour.White)).toString()}</p>
             <p>Threatened By Black?: {(props.tile.GetThreat(ChessColour.Black)).toString()}</p>
             
-            { props.tile.pieceOnTile.type !== ChessPieceType.None && 
+            { props.tile.pieceOnTile.type !== ChessPieceType.None ?
                 <div>
                     <p>- Piece On Tile Information -</p>
                     <p>Type: {GetTypeFromEnum(props.tile.pieceOnTile.type)}</p>
@@ -69,17 +69,17 @@ export default function DebugInformation(props: Props)
                     (
                         <div key={`${move.newPosition.x},${move.newPosition.y}`}>
                             <p>Move Position: {move.newPosition.x},{move.newPosition.y}</p>
-                            { props.tile.pieceOnTile.type === ChessPieceType.King && <p>Castling?: {(move.GetIsMoveCastling()).toString()}</p> }
-                            { props.tile.pieceOnTile.type === ChessPieceType.Pawn && 
+                            { props.tile.pieceOnTile.type === ChessPieceType.King ? <p>Castling?: {(move.GetIsMoveCastling()).toString()}</p> : null }
+                            { props.tile.pieceOnTile.type === ChessPieceType.Pawn ?
                                 <div>
                                     <p>Pawn Moving Two Spaces?: {(move.GetIsPawnMovingTwoSpaces()).toString()}</p>
                                     <p>Promotion?: {(move.GetIsMovePromotion()).toString()}</p>
                                     <p>En Passant?: {(move.GetIsMoveEnPassant()).toString()}</p>
-                                </div>
+                                </div> : null
                             }
                         </div>  
                     ))}
-                </div>
+                </div> : null
             }
         </div>
     );

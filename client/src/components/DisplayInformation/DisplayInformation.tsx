@@ -8,6 +8,7 @@ interface Props
 {
 	gameState: GameState,
     currentTurn: ChessColour,
+    playerTurn: ChessColour,
     tileSize: number,
     boardCorner: BoardPosition,
 }
@@ -73,7 +74,7 @@ export default function DisplayInformation(props: Props)
     {
         return (
             <div className="informationDisplay" style={style}>
-                <p>Current Turn: {GetCurrentTurnMessage(props.currentTurn)}</p>
+                <p>{GetCurrentTurnMessage(props.currentTurn)}: {props.currentTurn === props.playerTurn ? "Your Turn" : "Computer's Turn"}</p>
                 <p>{GetCheckMessage(props.gameState.whiteInCheck, props.gameState.blackInCheck)}</p>
             </div>
         )

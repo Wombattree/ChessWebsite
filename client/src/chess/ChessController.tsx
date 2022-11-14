@@ -1,50 +1,62 @@
 import { ChessPieceType, ChessColour, BoardTileState, KingStatus } from "../utilities/enums";
-import GetMovesForPiece, { SetThreatenedTiles } from "./GetMovesForPiece";
+import GetMovesForPiece from "./GetMovesForPiece";
 import { BoardTileData, BoardPosition } from "./BoardClasses";
 import { ChessData, GameState } from "./InformationClasses";
 import ChessMovementController from "./ChessMovementController";
 import { MovementInformation } from "./MovementClasses";
 import lodash from "lodash";
+import ChessAIController from "./ChessAIController";
 
 export default class ChessController
 {
     static StartGame(Update:() => void)
     {
         ChessData.InitialiseChessBoard();
-        this.NewTurn();
+        ChessData.SetPlayerTurn();
+        this.NewTurn(Update);
         Update();
     }
     
-    static NewTurn()
+    private static NewTurn(Update:() => void)
     {
+        ChessData.ToggleCurrentTurn();
         const chessBoard = ChessData.GetChessBoard();
         const currentTurn = ChessData.GetCurrentTurn();
         ChessData.ClearThreat();
 
-        // const chessBoardCopy = this.DeepCopyBoard(ChessData.GetChessBoard());
-
-        // for (let x = 0; x < 8; x++) {
-        //     for (let y = 0; y < 8; y++)
-        //     {
-        //         const copyTile = chessBoardCopy[x][y];
-        //         const pieceOnCopyTile = copyTile.pieceOnTile;
-    
-        //         if (pieceOnCopyTile.type !== ChessPieceType.None)
-        //         {
-        //             pieceOnCopyTile.viableMoves = GetMovesForPiece(copyTile);
-        //             SetThreatenedTiles(pieceOnCopyTile, chessBoardCopy);
-        //         }
-        //     }
-        // }
         let tilesWithPieces: BoardTileData[] = [];
-        
         this.GetMovesAndSetThreatened(chessBoard, tilesWithPieces);
+        this.FilterOutMovesThatWouldLeaveKingInCheck(tilesWithPieces, currentTurn, chessBoard);
 
-        // let chessBoardCopy = lodash.cloneDeep(chessBoard);
-        // chessBoardCopy[3][4].pieceOnTile = new ChessPiece(ChessPieceType.Queen, ChessColour.Black);
-        // console.log(chessBoardCopy[3][4]);
-        // console.log(chessBoard[3][4]);
+        const isCheckMate = this.IsCheckMate(currentTurn, tilesWithPieces, chessBoard);
+        if (isCheckMate !== ChessColour.None)
+        {
+            this.EndGame(isCheckMate);
+        }
+        else this.UpdateGameState();
 
+        if (ChessData.IsItPlayerTurn() === false) 
+        {
+            ChessAIController.DetermineMove(tilesWithPieces, chessBoard);
+            Update();
+            this.EndTurn(Update);
+        }
+    }
+
+    private static IsCheckMate(currentTurn: ChessColour, tilesWithPieces: BoardTileData[], chessBoard: BoardTileData[][]): ChessColour
+    {
+        if (this.DoesSideHaveAtLeastOneViableMove(tilesWithPieces, currentTurn) === false) return this.GetOpositeChessColour(currentTurn);
+        else return this.WhichKingIsInCheckMate(currentTurn, chessBoard);
+    }
+
+    private static GetOpositeChessColour(colour: ChessColour)
+    {
+        if (colour === ChessColour.White) return ChessColour.Black;
+        else return ChessColour.White;
+    }
+
+    private static FilterOutMovesThatWouldLeaveKingInCheck(tilesWithPieces: BoardTileData[], currentTurn: ChessColour, chessBoard: BoardTileData[][]) 
+    {
         for (let i = 0; i < tilesWithPieces.length; i++) 
         {
             if (tilesWithPieces[i].pieceOnTile.colour === currentTurn)
@@ -52,7 +64,7 @@ export default class ChessController
                 const viableMoves = tilesWithPieces[i].pieceOnTile.viableMoves;
                 let stillViableMoves: MovementInformation[] = [];
 
-                for (let j = 0; j < viableMoves.length; j++) 
+                for (let j = 0; j < viableMoves.length; j++)
                 {
                     const chessBoardCopy = lodash.cloneDeep(chessBoard);
                     const tileCopy = chessBoardCopy[tilesWithPieces[i].position.x][tilesWithPieces[i].position.y];
@@ -61,24 +73,32 @@ export default class ChessController
 
                     ChessMovementController.MovePiece(tileCopy, tileToMoveTo, chessBoardCopy, viableMoveCopy, true);
 
+                    this.ClearThreat(chessBoardCopy);
                     this.GetMovesAndSetThreatened(chessBoardCopy);
 
-                    const king = this.GetKing(ChessData.GetCurrentTurn(), chessBoardCopy);
+                    const kingTile = this.GetKing(currentTurn, chessBoardCopy);
 
-                    if (king && this.CheckKingStatus(ChessData.GetCurrentTurn(), king) !== KingStatus.Check)
+                    if (kingTile && this.CheckKingStatus(currentTurn, kingTile) !== KingStatus.Check) 
                     {
                         stillViableMoves.push(viableMoves[j]);
-                        console.log("Viable move");
                     }
-                    else if (!king) console.log("No king!");
-                    else if (this.CheckKingStatus(ChessData.GetCurrentTurn(), king) === KingStatus.Check) console.log("Check");
                 }
 
                 tilesWithPieces[i].pieceOnTile.viableMoves = stillViableMoves;
             }
         }
-        
-        this.UpdateGameState();
+    }
+
+    private static DoesSideHaveAtLeastOneViableMove(tilesWithPieces: BoardTileData[], currentTurn: ChessColour): boolean
+    {
+        for (let i = 0; i < tilesWithPieces.length; i++) 
+        {
+            if (tilesWithPieces[i].pieceOnTile.colour === currentTurn)
+            {
+                if (tilesWithPieces[i].pieceOnTile.viableMoves.length > 0) return true;
+            }
+        }
+        return false;
     }
 
     private static GetMovesAndSetThreatened(chessBoard: BoardTileData[][], tilesWithPieces?: BoardTileData[]) 
@@ -92,13 +112,31 @@ export default class ChessController
                 if (pieceOnTile.type !== ChessPieceType.None) 
                 {
                     if (tilesWithPieces) tilesWithPieces.push(tile);
-                    pieceOnTile.viableMoves = GetMovesForPiece(tile, chessBoard);
-                    SetThreatenedTiles(pieceOnTile, chessBoard);
+                    pieceOnTile.viableMoves = GetMovesForPiece.GetMoves(tile, chessBoard);
+                    GetMovesForPiece.SetThreatenedTiles(pieceOnTile, chessBoard);
                 }
             }
         }
     }
     
+    private static WhichKingIsInCheckMate(currentTurn: ChessColour, chessBoard: BoardTileData[][]): ChessColour
+    {
+        const whiteKing = this.GetKing(ChessColour.White, chessBoard);
+        const blackKing = this.GetKing(ChessColour.Black, chessBoard);
+
+        if (whiteKing)
+        {
+            if (blackKing)
+            {
+                if (currentTurn === ChessColour.White && this.CheckKingStatus(ChessColour.Black, blackKing)) return ChessColour.White;
+                if (currentTurn === ChessColour.Black && this.CheckKingStatus(ChessColour.White, whiteKing)) return ChessColour.Black; 
+            }
+            else return ChessColour.Black; 
+        }
+        else return ChessColour.White;
+        return ChessColour.None;
+    }
+
     static CheckKingStatus(kingColour: ChessColour, tileToCheck:BoardTileData):KingStatus
     {
         if (kingColour === ChessColour.White && tileToCheck.GetThreat(ChessColour.Black)) return KingStatus.Check;
@@ -106,43 +144,17 @@ export default class ChessController
         return KingStatus.Okay;
     }
 
-    // private static DeepCopyBoard(originalBoard: BoardTileData[][]): BoardTileData[][]
-    // {
-    //     const chessBoardCopy: BoardTileData[][] = [[],[],[],[],[],[],[],[]];
-
-    //     for (let x = 0; x < 8; x++) {
-    //         for (let y = 0; y < 8; y++) 
-    //         {
-    //             const boardTileOriginal = originalBoard[x][y];
-    //             const boardTileCopy = new BoardTileData(new BoardPosition(x, y));
-
-    //             const pieceOnTileOriginal = boardTileOriginal.pieceOnTile;
-    //             const pieceOnTileCopy = new ChessPiece(pieceOnTileOriginal.type, pieceOnTileOriginal.colour);
-    //             pieceOnTileCopy.hasMoved = pieceOnTileOriginal.hasMoved;
-    //             pieceOnTileCopy.hasPawnMovedTwoSpacesLastTurn = pieceOnTileOriginal.hasPawnMovedTwoSpacesLastTurn;
-
-    //             boardTileCopy.pieceOnTile = pieceOnTileCopy;
-
-    //             chessBoardCopy[x][y] = boardTileCopy;
-    //         }
-    //     }
-
-    //     return chessBoardCopy;
-    // }
-
-    static EndTurn()
+    static EndTurn(Update:() => void)
     {
         ChessData.SetSelectedPiece(null);
-        ChessData.ToggleCurrentTurn();
         this.ClearBoard(ChessData.GetChessBoard(), true);
-        this.NewTurn();
+        this.NewTurn(Update);
     }
     
     static EndGame(victor: ChessColour)
     {
         const gameState = ChessData.GetGameState();
-        ChessData.SetGameState(new GameState(gameState.whiteInCheck, gameState.whiteInCheck, victor));
-        console.log("Game Ended");
+        ChessData.SetGameState(new GameState(gameState.whiteInCheck, gameState.blackInCheck, victor));
     }
     
     static HandleLeftClickOnTile(positionClicked: BoardPosition, Update:() => void)
@@ -162,7 +174,7 @@ export default class ChessController
     
             if (displayPromotion === false) 
             {
-                this.EndTurn();
+                this.EndTurn(Update);
             }
         }
         //If there is a piece on the tile and it is the colour of the current turn
@@ -170,7 +182,7 @@ export default class ChessController
         {
             updatedChessBoard = this.ToggleTileSelected(positionClicked, tileClicked, updatedChessBoard)
         }
-        //If the tile was blank
+        //If the tile was blank and can't be moved to
         else updatedChessBoard = this.ClearBoard(updatedChessBoard);
     
         ChessData.SetChessBoard(updatedChessBoard);
@@ -206,9 +218,9 @@ export default class ChessController
             for (let y = 0; y < 8; y++)
             {
                 const piece = chessBoard[x][y].pieceOnTile;
-                if (piece.type === ChessPieceType.King)
+                if (piece.type === ChessPieceType.King && piece.colour === colour)
                 {
-                    if (piece.colour === colour) return chessBoard[x][y];
+                    return chessBoard[x][y];
                 }
             }
         }
@@ -218,17 +230,11 @@ export default class ChessController
     {
         const chessBoard = ChessData.GetChessBoard();
         const whiteKing = this.GetKing(ChessColour.White, chessBoard);
-        const whiteInCheck = whiteKing ? (whiteKing.GetThreat(ChessColour.Black) ? true : false) : false;
+        const whiteInCheck = whiteKing ? (whiteKing.GetThreat(ChessColour.Black) ? true : false) : true;
         const blackKing = this.GetKing(ChessColour.Black, chessBoard);
-        const blackInCheck = blackKing ? (blackKing.GetThreat(ChessColour.White) ? true : false) : false;
-        const checkmateStatus = this.CheckmateStatus();
+        const blackInCheck = blackKing ? (blackKing.GetThreat(ChessColour.White) ? true : false) : true;
     
-        ChessData.SetGameState(new GameState(whiteInCheck, blackInCheck, checkmateStatus));
-    }
-    
-    static CheckmateStatus():ChessColour | null
-    {
-        return null;
+        ChessData.SetGameState(new GameState(whiteInCheck, blackInCheck, null));
     }
     
     static Checkmate(victor: ChessColour, EndGame: (victor: ChessColour) => void)
@@ -244,7 +250,7 @@ export default class ChessController
             const promotionTile = ChessData.GetTileAtPosition(selectedPiece.position);
             promotionTile.pieceOnTile.type = promotionType;
         }
-        this.EndTurn();
+        this.EndTurn(Update);
         Update();
     }
     
@@ -268,5 +274,15 @@ export default class ChessController
         }
         
         return chessBoard;
+    }
+
+    static ClearThreat(chessBoard: BoardTileData[][])
+    {
+        chessBoard.forEach((row) => {
+            row.forEach((tile) =>
+            {
+                tile.ClearThreat();
+            });
+        });
     }
 }

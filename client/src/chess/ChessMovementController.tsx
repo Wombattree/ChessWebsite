@@ -6,19 +6,22 @@ import { MovementInformation } from "./MovementClasses";
 
 export default class ChessMovementController
 {
-    static MovePiece(tileToMoveFrom: BoardTileData, tileToMoveTo: BoardTileData, chessBoard: BoardTileData[][], movementInformation?: MovementInformation, testingMoves?: boolean): boolean
+    static MovePiece(tileToMoveFrom: BoardTileData, tileToMoveTo: BoardTileData, chessBoard: BoardTileData[][], movementInformation?: MovementInformation, checkingMoveValidity?: boolean): boolean
     {
         const pieceToMove: ChessPiece = tileToMoveFrom.pieceOnTile;
         const move: MovementInformation | null = movementInformation ? movementInformation : this.FindMoveFromPiece(pieceToMove.viableMoves, tileToMoveTo);
         let displayPromotion = false;
-        //let checkmate = false;
 
         if (move)
         {
             if (move.GetIsMoveCastling()) this.Castle(move, chessBoard, tileToMoveFrom, tileToMoveTo);
             else
             {
-                if (tileToMoveTo.pieceOnTile.type === ChessPieceType.King && testingMoves === false) this.TakeKing(tileToMoveTo, tileToMoveFrom);
+                if (tileToMoveTo.pieceOnTile.type === ChessPieceType.King && checkingMoveValidity === false) 
+                {
+                    this.Move(tileToMoveTo, tileToMoveFrom);
+                    ChessController.Checkmate(tileToMoveTo.pieceOnTile.colour, ChessController.EndGame);
+                }
                 else
                 {
                     this.Move(tileToMoveTo, tileToMoveFrom);
@@ -54,13 +57,6 @@ export default class ChessMovementController
         }
     }
 
-    private static TakeKing(tileToMoveTo: BoardTileData, tileToMoveFrom: BoardTileData) 
-    {
-        tileToMoveTo.pieceOnTile = tileToMoveFrom.pieceOnTile;
-        tileToMoveFrom.ClearTile();
-        ChessController.Checkmate(tileToMoveFrom.pieceOnTile.colour, ChessController.EndGame);
-    }
-
     private static Castle(move: MovementInformation, chessBoard: BoardTileData[][], tileToMoveFrom: BoardTileData, tileToMoveTo: BoardTileData) 
     {
         const kingPosition: BoardPosition | null = move.GetKingCastlingPosition();
@@ -90,27 +86,4 @@ export default class ChessMovementController
         }
         return null;
     } 
-
-    // static TryOutMove(tileToMoveFrom: BoardTileData, move: MovementInformation, chessBoard: BoardTileData[][]): boolean
-    // {
-    //     const tileToMoveTo = ChessData.GetTileAtPosition(move.newPosition);
-
-    //     if (move.GetIsMoveCastling()) this.Castle(move, chessBoard, tileToMoveFrom, tileToMoveTo);
-    //     else
-    //     {
-    //         if (tileToMoveTo.pieceOnTile.type === ChessPieceType.King) this.TakeKing(tileToMoveTo, tileToMoveFrom);
-    //         else
-    //         {
-    //             this.Move(tileToMoveTo, tileToMoveFrom);
-                
-    //             if (move.GetIsMoveEnPassant()) this.EnPassant(move, chessBoard);
-                
-    //             if (move.GetIsPawnMovingTwoSpaces()) tileToMoveTo.pieceOnTile.hasPawnMovedTwoSpacesLastTurn = true;
-    //         }
-
-    //         tileToMoveTo.pieceOnTile.hasMoved = true;
-    //     }
-
-    //     return false;
-    // }
 }
