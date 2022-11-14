@@ -1,10 +1,10 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import path from 'path';
-import Authentication from './utils/Authentication';
+import Authentication from './src/utils/Authentication';
 
-import { typeDefs, resolvers } from './schemas';
-import database from './config/connection';
+import { typeDefs, resolvers } from './src/schemas';
+import database from './src/config/connection';
 import { DocumentNode } from 'graphql';
 
 const PORT = process.env.PORT || 3001;
