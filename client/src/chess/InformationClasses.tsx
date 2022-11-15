@@ -53,7 +53,7 @@ export class ChessData
 
     static InitialiseChessBoard():BoardTileData[][]
     {
-        const chessBoard:BoardTileData[][] = [[],[],[],[],[],[],[],[]];
+        const chessBoard: BoardTileData[][] = [[],[],[],[],[],[],[],[]];
         const chessBoardPieces:ChessPiece[][] = LoadPositionFromFen(this.startingFEN);
 
         for (let x = 0; x < 8; x++) {
@@ -68,6 +68,16 @@ export class ChessData
         }
 
         return chessBoard;
+    }
+
+    static Reset()
+    {
+        this.SetGameState(new GameState(false, false, null));
+        this.SetCurrentTurn(ChessColour.Black);
+        this.SetSelectedPiece(null);
+        this.SetDisplayPromotion(false);
+        this.SetPlayerTurn();
+        this.SetChessBoard(this.InitialiseChessBoard());
     }
 
     static SetPlayerTurn()

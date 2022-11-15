@@ -4,9 +4,6 @@ import GetPieceImage from '../../chess/GetPieceImage';
 import './style.css';
 import { BoardPosition, BoardTileData } from '../../chess/BoardClasses';
 
-const whiteTileColour = "rgb(231 220 220)";
-const blackTileColour = "rgb(191 98 98)";
-
 interface Props
 {
 	boardTileData: BoardTileData,
@@ -22,14 +19,14 @@ function GetTileColour(xPosition:number, yPosition:number):string
 {
     if (xPosition % 2 === 0)
     {
-        return (yPosition % 2 === 0 ? whiteTileColour : blackTileColour);
+        return (yPosition % 2 === 0 ? "backgroundWhite" : "backgroundMedium");
     }
-    else return (yPosition % 2 === 0 ? blackTileColour : whiteTileColour);
+    else return (yPosition % 2 === 0 ? "backgroundMedium" : "backgroundWhite");
 }
 
-function GetPosition(position:number, cornerPosition:number, tileSize:number):string
+function GetPosition(position:number, cornerPosition:number, tileSize:number): number
 {
-    return `${cornerPosition + position * tileSize}px`
+    return cornerPosition + position * tileSize;
 }
 
 function ShowWhiteThreatenedTiles(props: Props): boolean
@@ -77,13 +74,13 @@ export default function BoardTile (props: Props)
     }
 
 	return (
-		<div className="boardTile" style={tileStyle} 
+		<div className={`boardTile ${GetTileColour(props.boardTileData.position.x, props.boardTileData.position.y)}`} style={tileStyle} 
             onClick={() => TileClicked()} 
             onMouseEnter={() => ToggleTileHover(true)}
             onMouseLeave={() => ToggleTileHover(false)}
             >
 
-            <div className="boardTileText">{`${props.boardTileData.position.x}, ${props.boardTileData.position.y}`}</div>
+            { props.debugMode ? <div className="boardTileText">{`${props.boardTileData.position.x}, ${props.boardTileData.position.y}`}</div> : null }
 
             { props.boardTileData.tileState === BoardTileState.Active &&
                 <div className="boardTile boardTileActive" style={activeStyle}></div>

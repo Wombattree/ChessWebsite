@@ -11,8 +11,7 @@ export default class ChessController
 {
     static StartGame(Update:() => void)
     {
-        ChessData.InitialiseChessBoard();
-        ChessData.SetPlayerTurn();
+        ChessData.Reset();
         this.NewTurn(Update);
         Update();
     }

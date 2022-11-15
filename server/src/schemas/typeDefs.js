@@ -1,7 +1,34 @@
-var __makeTemplateObject = (this && this.__makeTemplateObject) || function (cooked, raw) {
-    if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
-    return cooked;
-};
-import { gql } from 'apollo-server-express';
-export var typeDefs = gql(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n\ttype User \n\t{\n\t\t_id: ID\n\t\tuserName: String\n\t\temail: String\n\t\twins: Number\n\t\tloses: Number\n\t\tdraws: Number\n\t}\n\n\ttype Authentication\n\t{\n\t\ttoken: ID\n\t\tuser: User\n\t}\n\n\ttype Query \n\t{\n\t\tGetUser: User\n\t}\n\n\ttype Mutation \n\t{\n\t\tAddUser(userName: String!, email: String!, password: String!): Authentication\n\t\tUpdateUser(userName: String!, email: String!, password: String!, wins: Number, loses: Number, draws: Number): User\n\t\tLogin(email: String!, password: String!): Authentication\n\t}\n"], ["\n\ttype User \n\t{\n\t\t_id: ID\n\t\tuserName: String\n\t\temail: String\n\t\twins: Number\n\t\tloses: Number\n\t\tdraws: Number\n\t}\n\n\ttype Authentication\n\t{\n\t\ttoken: ID\n\t\tuser: User\n\t}\n\n\ttype Query \n\t{\n\t\tGetUser: User\n\t}\n\n\ttype Mutation \n\t{\n\t\tAddUser(userName: String!, email: String!, password: String!): Authentication\n\t\tUpdateUser(userName: String!, email: String!, password: String!, wins: Number, loses: Number, draws: Number): User\n\t\tLogin(email: String!, password: String!): Authentication\n\t}\n"])));
-var templateObject_1;
+const { gql } = require('apollo-server-express');
+
+const typeDefs = gql`
+	type User 
+	{
+		_id: ID
+		username: String
+		email: String
+		wins: Int
+		loses: Int
+		draws: Int
+	}
+
+	type Authentication
+	{
+		token: ID
+		user: User
+	}
+
+	type Query 
+	{
+		GetUser: User
+		GetUsers: [User]
+	}
+
+	type Mutation 
+	{
+		AddUser(username: String!, email: String!, password: String!): Authentication
+		UpdateUser(username: String, email: String, password: String, wins: Int, loses: Int, draws: Int): User
+		Login(username: String!, password: String!): Authentication
+	}
+`;
+
+module.exports = typeDefs;

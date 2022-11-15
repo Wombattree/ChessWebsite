@@ -1,6 +1,7 @@
 .boardTile
 {
     position: fixed;
+    border-radius: 10%;
 }
 
 .boardTileImage
@@ -28,17 +29,17 @@
 
 .boardTileActive
 {
-    background-color: rgba(77, 237, 165, 0.8);
+    background-color: rgb(240, 116, 172, 1);
+}
+
+.boardTileMovable
+{
+    background-color: rgb(237, 169, 200, 0.8);
 }
 
 .boardTileHovered
 {
     background-color: rgba(77, 237, 165, 0.5);
-}
-
-.boardTileMovable
-{
-    background-color: rgba(77, 213, 237, 0.65);
 }
 
 .boardTileThreatenedWhite

@@ -2,6 +2,7 @@ import lodash from "lodash";
 import { ChessColour, ChessPieceType } from "../utilities/enums";
 import { AISearchResult } from "./AIClasses";
 import { BoardTileData } from "./BoardClasses";
+import ChessController from "./ChessController";
 import ChessMovementController from "./ChessMovementController";
 import { ChessData } from "./InformationClasses";
 import { MovementInformation } from "./MovementClasses";
@@ -48,7 +49,11 @@ export default class ChessAIController
             const chosenMove: AISearchResult = bestMoves[this.PickRandomlyFromBestMoves(bestMoves)];
             this.PlayMove(chosenMove, chessBoard);
         }
-        else console.log("No moves!");
+        else 
+        {
+            console.log("No moves!");
+            ChessController.EndGame(ChessData.GetPlayerTurn());
+        }
     }
 
     private static PlayMove(move: AISearchResult, chessBoard: BoardTileData[][])

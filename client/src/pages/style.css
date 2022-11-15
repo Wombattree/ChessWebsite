@@ -1,0 +1,14 @@
+.fixedPosition
+{
+    position: fixed;
+}
+
+.formTitle
+{
+    font-size: 25px;
+}
+
+.centeredText
+{
+    text-align: center;
+}

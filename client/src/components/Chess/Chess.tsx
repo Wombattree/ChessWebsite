@@ -10,16 +10,6 @@ import { ChessData, GameState } from '../../chess/InformationClasses';
 import BoardTile from '../BoardTile/BoardTile';
 import DebugInformation from '../DebugInformation/DebugInformation';
 
-function GetBoardTileSize(screenWidth:number, screenHeight:number):number
-{
-	return (Math.max(screenWidth / 20, screenHeight / 20));
-}
-
-function GetBoardCornerPosition(screenWidth:number, screenHeight:number, boardTileSize:number):BoardPosition
-{
-	return new BoardPosition(screenHeight * 0.5 - boardTileSize * 4, screenWidth * 0.5 - boardTileSize * 4);
-}
-
 export default function Chess()
 {
 	const [chessBoard, SetChessBoard] = useState<BoardTileData[][]>(ChessData.InitialiseChessBoard());
@@ -30,7 +20,7 @@ export default function Chess()
 
 	const [displayDebugInfo, SetDisplayDebugInfo] = useState<BoardTileData | null>(null);
 
-	const debugMode: boolean = true;
+	const debugMode: boolean = false;
 
 	useEffect(() => { ChessController.StartGame(Update); }, []);
 
@@ -62,11 +52,50 @@ export default function Chess()
 	const screenWidth:number = window.innerWidth;
 	const screenHeight:number = window.innerHeight;
 
-	const boardTileSize:number = GetBoardTileSize(screenWidth, screenHeight);
-	const boardCornerPosition:BoardPosition = GetBoardCornerPosition(screenWidth, screenHeight, boardTileSize);
+	const boardTileSize:number = GetBoardTileSize();
+	const boardCornerPosition:BoardPosition = GetBoardCornerPosition();
+
+	function GetBoardTileSize():number
+	{
+		return (Math.min((screenWidth * 0.6) / 8, (screenHeight * 0.6) / 8));
+	}
+
+	function GetBoardCornerPosition():BoardPosition
+	{
+		return new BoardPosition(screenHeight * 0.5 - boardTileSize * 4, screenWidth * 0.5 - boardTileSize * 4);
+	}
+
+	function GetBorderPosition(cornerPosition:number):string
+	{
+		return `${cornerPosition - 0.25 * boardTileSize}px`
+	}
+
+	const borderStyle = 
+    {
+        top: GetBorderPosition(boardCornerPosition.x),
+        left: GetBorderPosition(boardCornerPosition.y),
+        width: boardTileSize * 8.5,
+        height: boardTileSize * 8.5,
+    }
+
+	function GetInnerBorderPosition(cornerPosition:number):string
+	{
+		return `${cornerPosition - 0.125 * boardTileSize}px`
+	}
+
+	const innerBorderStyle = 
+    {
+        top: GetInnerBorderPosition(boardCornerPosition.x),
+        left: GetInnerBorderPosition(boardCornerPosition.y),
+        width: boardTileSize * 8.25,
+        height: boardTileSize * 8.25,
+    }
 
 	return (
 		<div>
+			<div style={borderStyle} className={`chessBorder backgroundLight`}></div>
+			<div style={innerBorderStyle} className={`chessBorder backgroundMedium`}></div>
+			
 			<DisplayInformation
 				gameState={currentGameState}
 				currentTurn={currentTurn} 
