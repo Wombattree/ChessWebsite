@@ -4,7 +4,7 @@ import { setContext } from '@apollo/client/link/context';
 import "bulma/css/bulma.min.css";
 import PageContainer from './components/PageContainer/PageContainer';
 
-const httpLink = createHttpLink({ uri: 'http://localhost:3001/graphql', });
+const httpLink = createHttpLink({ uri: '/graphql', });
 
 const authLink = setContext((_, { headers }) => 
 {
