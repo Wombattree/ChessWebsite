@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Description
-A website for playing chess against the computer. Made with React and Typescript.
+A website for playing chess against the computer. Made with React and Typescript. You can try it out [here](https://wombattree.github.io/ChessWebsite/).
 
 ![Preview Image](./screenshot.png?raw=true "Preview Image")
 
