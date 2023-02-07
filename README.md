@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Description
-A website for playing chess against the computer. Made with the MERN stack.
+A website for playing chess against the computer. Made with the React and Typescript.
 
 ![Preview Image](./screenshot.png?raw=true "Preview Image")
 
