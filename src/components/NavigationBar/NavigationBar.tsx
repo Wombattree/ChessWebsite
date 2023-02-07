@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import authentication from '../../utilities/authentication';
 import { PageNames } from '../../utilities/enums';
 import NavigationBarButton from './NavigationBarButton';
-import NavigationBarLogOutButton from './NavigationBarLogoutButton';
 import "./style.css";
 
 interface Props
@@ -55,42 +53,6 @@ export default function NavigationBar (props: Props)
 									HandlePageChange={props.HandlePageChange}
 								/>
 							</div>
-						</div>
-
-						<div className="navbar-end">
-							{ authentication.LoggedIn() ? 
-								<div className="navbar-item">
-									<NavigationBarButton
-										buttonName="Profile" 
-										pageName={PageNames.UserProfile}
-										currentPage={props.currentPage} 
-										HandlePageChange={props.HandlePageChange}
-									/>
-
-									<NavigationBarLogOutButton
-										buttonName="Log Out" 
-										pageName={PageNames.LogOut}
-										currentPage={props.currentPage} 
-										HandlePageChange={props.HandlePageChange}
-									/>
-								</div>
-								:
-								<div className="navbar-item">
-									<NavigationBarButton
-										buttonName="Sign Up" 
-										pageName={PageNames.SignUp}
-										currentPage={props.currentPage} 
-										HandlePageChange={props.HandlePageChange}
-									/>
-
-									<NavigationBarButton
-										buttonName="Sign In" 
-										pageName={PageNames.SignIn}
-										currentPage={props.currentPage} 
-										HandlePageChange={props.HandlePageChange}
-									/>
-								</div>
-							}
 						</div>
 					</div>
 				</nav>
